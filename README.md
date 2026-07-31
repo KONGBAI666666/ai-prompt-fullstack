@@ -53,6 +53,28 @@
 | 个人中心（我的信息 / 我的 Prompt / 收藏 / 使用记录） | ✅ |
 | 管理员后台（数据统计 / 用户禁用踢下线 / 内容管理） | ✅ |
 
+## 页面截图
+
+### 登录页
+
+![登录页](docs/screenshots/登录页.png)
+
+### 首页——Prompt 列表（搜索 / 分类 / 分页 / 收藏 / 复制）
+
+![首页](docs/screenshots/首页.png)
+
+### Prompt 详情页
+
+![详情页](docs/screenshots/详情页.png)
+
+### 个人中心（我的 Prompt / 收藏 / 使用记录）
+
+![个人中心](docs/screenshots/个人中心.png)
+
+### 管理员后台（数据统计 / 用户管理 / 内容管理）
+
+![管理后台](docs/screenshots/管理后台.png)
+
 ## 项目结构
 
 ```
