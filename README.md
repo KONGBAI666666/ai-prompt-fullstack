@@ -2,6 +2,56 @@
 
 前后端分离的 AI 提示词管理平台。后端提供 22 个 RESTful 接口，前端使用 Vue 3 单页应用调用。
 
+## 项目架构
+
+```
+┌─────────────────────── 浏览器 ───────────────────────┐
+│                                                      │
+│   Vue 3 页面（LoginView / HomeView / MainLayout）     │
+│                        │                             │
+│                 api 模块（user.js 等）                 │
+│                        │                             │
+│           Axios 封装（request.js 拦截器）              │
+│         请求自动携带 Authorization: token              │
+└────────────────────────┼─────────────────────────────┘
+                         │  HTTP + JSON
+                         │  （开发期经 Vite 代理 /api → 8080）
+┌────────────────────────┼─────────────────────────────┐
+│                 Spring Boot 后端                      │
+│                        │                             │
+│      Sa-Token 拦截器（校验 token / 权限 RBAC）          │
+│                        │                             │
+│      Controller（22 个 REST 接口，统一返回 Result）      │
+│                        │                             │
+│            Service（业务逻辑 / 事务）                   │
+│                        │                             │
+│         MyBatis-Plus（Mapper / 分页插件）              │
+└────────────────────────┼─────────────────────────────┘
+                         │
+                    MySQL 8.0
+        （user / prompt / category / favorite / history）
+```
+
+一次典型请求（以登录为例）：
+
+```
+点击登录 → LoginView.vue → user.js → request.js → POST /api/user/login
+        → UserController → UserService（BCrypt 校验密码）→ Sa-Token 生成 token
+        → 返回 {token, user} → 前端存入 localStorage → 后续请求自动带 token
+```
+
+## 已实现功能
+
+| 模块 | 状态 |
+| --- | --- |
+| 用户注册 / 登录 / 登出（Sa-Token 认证） | ✅ |
+| RBAC 权限控制（USER / ADMIN） | ✅ |
+| Prompt 管理 22 个 REST 接口 + Swagger 文档 | ✅ |
+| 前端登录页（token 保存 + 路由守卫） | ✅ |
+| Prompt 列表（搜索 / 分类筛选 / 分页 / 收藏 / 一键复制） | ✅ |
+| Prompt 新增 / 详情 / 编辑（前端页面） | 🚧 规划中 |
+| 管理员后台（前端页面，接口已就绪） | 🚧 规划中 |
+
 ## 项目结构
 
 ```
