@@ -1,6 +1,7 @@
 <script setup>
 // 首页 = Prompt 列表页：搜索 + 分类筛选 + 分页 + 收藏 + 复制使用
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getPromptList } from '@/api/prompt'
 import { getCategoryList } from '@/api/category'
@@ -21,6 +22,7 @@ const query = ref({
 })
 
 const categories = ref([]) // 分类下拉选项
+const router = useRouter()
 
 // ---------- 数据加载 ----------
 async function loadList() {
@@ -104,6 +106,7 @@ async function copyPrompt(item) {
           <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
         </el-select>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button type="success" @click="router.push('/prompt/create')">✒️ 发布 Prompt</el-button>
       </div>
     </el-card>
 

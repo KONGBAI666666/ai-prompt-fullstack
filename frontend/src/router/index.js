@@ -19,6 +19,11 @@ const router = createRouter({
           name: 'home',
           component: () => import('@/views/HomeView.vue'),
         },
+        {
+          path: 'prompt/create',
+          name: 'prompt-create',
+          component: () => import('@/views/PromptCreateView.vue'),
+        },
       ],
     },
   ],
