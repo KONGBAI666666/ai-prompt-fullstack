@@ -4,10 +4,12 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { logout } from '@/api/user'
 import { getUser, clearAuth } from '@/utils/auth'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 // 登录时存进 localStorage 的用户信息（LoginVO.user）
 const user = getUser()
+const { isDark, toggleTheme } = useTheme()
 
 async function handleLogout() {
   await ElMessageBox.confirm('确定退出登录吗？', '提示', { type: 'warning' })
@@ -26,8 +28,21 @@ async function handleLogout() {
   <div class="layout">
     <header class="navbar">
       <div class="navbar-inner">
-        <div class="brand" @click="router.push('/')">🚀 AI 提示词管理平台</div>
+        <div class="brand" @click="router.push('/')">
+          <el-icon :size="20"><MagicStick /></el-icon>
+          <span>AI 提示词管理平台</span>
+        </div>
         <div class="right">
+          <!-- 明/暗主题切换 -->
+          <el-button
+            circle
+            text
+            class="theme-btn"
+            :title="isDark ? '切换到明亮模式' : '切换到暗黑模式'"
+            @click="toggleTheme"
+          >
+            <el-icon :size="17"><Sunny v-if="isDark" /><Moon v-else /></el-icon>
+          </el-button>
           <!-- 管理后台入口：仅管理员可见（后端接口另有 @SaCheckRole 兼底） -->
           <el-button v-if="user?.role === 'ADMIN'" link type="primary" @click="router.push('/admin')">
             管理后台
@@ -48,9 +63,12 @@ async function handleLogout() {
 </template>
 
 <style scoped>
+/* 顶栏：半透明毛玻璃吸顶，颜色由 --app-navbar-bg 随主题切换 */
 .navbar {
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background: var(--app-navbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--app-border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -67,9 +85,13 @@ async function handleLogout() {
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--app-title-font);
   font-size: 18px;
   font-weight: bold;
-  color: #409eff;
+  color: var(--app-brand);
   cursor: pointer;
 }
 
@@ -79,14 +101,18 @@ async function handleLogout() {
   gap: 12px;
 }
 
+.theme-btn {
+  color: var(--app-text-secondary);
+}
+
 .welcome {
-  color: #606266;
+  color: var(--app-text-secondary);
   font-size: 14px;
   cursor: pointer;
 }
 
 .welcome:hover {
-  color: #409eff;
+  color: var(--app-brand);
 }
 
 .content {

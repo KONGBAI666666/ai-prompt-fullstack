@@ -6,8 +6,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/user'
 import { setToken, setUser } from '@/utils/auth'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
+const { isDark, toggleTheme } = useTheme()
 
 // ref()：把普通值变成响应式数据，模板里用到它的地方会随值变化自动刷新
 const form = ref({
@@ -38,38 +40,61 @@ async function handleLogin() {
 
 <template>
   <div class="login-page">
-    <el-card class="login-card">
-      <h2 class="title">AI 提示词管理平台</h2>
-      <p class="subtitle">分享、检索、收藏你的 AI Prompt</p>
+    <!-- 右上角主题切换 -->
+    <el-button circle text class="theme-btn" @click="toggleTheme">
+      <el-icon :size="20"><Sunny v-if="isDark" /><Moon v-else /></el-icon>
+    </el-button>
 
-      <el-form :model="form" @keyup.enter="handleLogin">
-        <el-form-item>
-          <el-input v-model="form.username" placeholder="用户名" size="large" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="密码"
-            size="large"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            class="login-btn"
-            :loading="loading"
-            @click="handleLogin"
-          >
-            登 录
-          </el-button>
-        </el-form-item>
-      </el-form>
+    <div class="login-panel">
+      <!-- 左侧品牌区：背景由 --app-login-hero 随主题切换（明面米绿渐变/暗面紫色光晕） -->
+      <div class="hero">
+        <div class="deco deco-1"></div>
+        <div class="deco deco-2"></div>
+        <div class="hero-brand">
+          <el-icon :size="44"><MagicStick /></el-icon>
+          <div class="hero-title">AI 提示词管理平台</div>
+          <div class="hero-sub">分享、检索、收藏你的 AI Prompt</div>
+        </div>
+      </div>
 
-      <p class="tip">测试账号：test / 123456　管理员：admin / admin123</p>
-    </el-card>
+      <!-- 右侧表单区 -->
+      <div class="form-side">
+        <h2 class="title">欢迎回来</h2>
+        <p class="subtitle">登录你的账号</p>
+
+        <el-form :model="form" @keyup.enter="handleLogin">
+          <el-form-item>
+            <el-input v-model="form.username" placeholder="用户名" size="large" clearable>
+              <template #prefix><el-icon><User /></el-icon></template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="密码"
+              size="large"
+              show-password
+            >
+              <template #prefix><el-icon><Lock /></el-icon></template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              type="primary"
+              size="large"
+              class="login-btn"
+              :loading="loading"
+              @click="handleLogin"
+            >
+              登 录
+            </el-button>
+          </el-form-item>
+        </el-form>
+
+        <p class="tip">测试账号：test / 123456　管理员：admin / admin123</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -79,24 +104,100 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-bg);
+  position: relative;
 }
 
-.login-card {
-  width: 400px;
-  padding: 16px 8px;
+.theme-btn {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  color: var(--app-text-secondary);
+}
+
+/* 左右分栏面板：参考图的结构 */
+.login-panel {
+  width: 860px;
+  max-width: calc(100vw - 32px);
+  min-height: 480px;
+  display: flex;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--app-card-bg);
+  border: 1px solid var(--app-border);
+  box-shadow: var(--app-shadow);
+}
+
+.hero {
+  flex: 1.1;
+  position: relative;
+  background: var(--app-login-hero);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* 纯 CSS 装饰圆环，替代参考图的照片素材，无版权问题 */
+.deco {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.deco-1 {
+  width: 220px;
+  height: 220px;
+  top: -60px;
+  left: -60px;
+}
+
+.deco-2 {
+  width: 140px;
+  height: 140px;
+  bottom: -30px;
+  right: -20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+}
+
+.hero-brand {
+  text-align: center;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--app-title-font);
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 14px;
+}
+
+.hero-sub {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 8px;
+}
+
+.form-side {
+  flex: 1;
+  padding: 48px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .title {
-  text-align: center;
+  font-family: var(--app-title-font);
+  color: var(--app-text-primary);
   margin-bottom: 4px;
 }
 
 .subtitle {
-  text-align: center;
-  color: #909399;
+  color: var(--app-text-secondary);
   font-size: 13px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .login-btn {
@@ -105,7 +206,15 @@ async function handleLogin() {
 
 .tip {
   text-align: center;
-  color: #c0c4cc;
+  color: var(--app-text-secondary);
   font-size: 12px;
+  margin-top: 8px;
+}
+
+/* 窄屏隐藏左侧品牌区，只留表单 */
+@media (max-width: 640px) {
+  .hero {
+    display: none;
+  }
 }
 </style>

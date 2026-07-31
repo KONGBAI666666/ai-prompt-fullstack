@@ -94,19 +94,19 @@ onMounted(async () => {
     <div class="stats-row">
       <el-card class="stat-card" shadow="hover">
         <div class="stat-num">{{ stats?.userCount ?? '-' }}</div>
-        <div class="stat-label">👥 用户总数</div>
+        <div class="stat-label"><el-icon><UserFilled /></el-icon> 用户总数</div>
       </el-card>
       <el-card class="stat-card" shadow="hover">
         <div class="stat-num">{{ stats?.promptCount ?? '-' }}</div>
-        <div class="stat-label">📝 Prompt 总数</div>
+        <div class="stat-label"><el-icon><Document /></el-icon> Prompt 总数</div>
       </el-card>
       <el-card class="stat-card" shadow="hover">
         <div class="stat-num">{{ stats?.favoriteCount ?? '-' }}</div>
-        <div class="stat-label">⭐ 收藏总数</div>
+        <div class="stat-label"><el-icon><Star /></el-icon> 收藏总数</div>
       </el-card>
       <el-card class="stat-card" shadow="hover">
         <div class="stat-num highlight">{{ stats?.todayPromptCount ?? '-' }}</div>
-        <div class="stat-label">🔥 今日新增</div>
+        <div class="stat-label"><el-icon><TrendCharts /></el-icon> 今日新增</div>
       </el-card>
     </div>
 
@@ -214,18 +214,25 @@ onMounted(async () => {
   text-align: center;
 }
 
+.stat-card:hover {
+  box-shadow: var(--app-shadow-hover);
+}
+
 .stat-num {
   font-size: 28px;
   font-weight: bold;
-  color: #303133;
+  color: var(--app-brand);
 }
 
 .stat-num.highlight {
-  color: #f56c6c;
+  color: var(--app-accent);
 }
 
 .stat-label {
-  color: #909399;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--app-text-secondary);
   font-size: 13px;
   margin-top: 4px;
 }
@@ -236,6 +243,7 @@ onMounted(async () => {
 
 .panel-title {
   font-weight: bold;
+  color: var(--app-text-primary);
 }
 
 .panel-header {
@@ -250,7 +258,7 @@ onMounted(async () => {
 
 .link {
   cursor: pointer;
-  color: #409eff;
+  color: var(--app-brand);
 }
 
 .pagination {

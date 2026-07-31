@@ -71,7 +71,9 @@ async function handleSubmit() {
 <template>
   <el-card>
     <template #header>
-      <span class="page-title">{{ isEdit ? '✏️ 编辑 Prompt' : '✍️ 发布 Prompt' }}</span>
+      <span class="page-title">
+        <el-icon><EditPen /></el-icon>{{ isEdit ? '编辑 Prompt' : '发布 Prompt' }}
+      </span>
     </template>
 
     <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
@@ -117,7 +119,12 @@ async function handleSubmit() {
 
 <style scoped>
 .page-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--app-title-font);
   font-size: 16px;
   font-weight: bold;
+  color: var(--app-text-primary);
 }
 </style>

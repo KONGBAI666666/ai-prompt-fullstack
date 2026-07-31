@@ -1,0 +1,111 @@
+/* ============================================================
+   双主题设计令牌
+   明面（:root）    ：鼠尾草绿自然风 —— 暖米白背景、白卡片、绿主色
+   暗面（html.dark）：Linear 紫科技风 —— 近黑深紫背景、玻璃卡片、紫主色
+   规则：页面样式只允许引用 --app-* 变量，禁止再写死颜色
+   ============================================================ */
+
+:root {
+  /* 基础色 */
+  --app-bg: #f5f2eb;
+  --app-card-bg: #ffffff;
+  --app-border: #e8e4da;
+  --app-text-primary: #2f3327;
+  --app-text-secondary: #8a8778;
+
+  /* 品牌色与点缀色 */
+  --app-brand: #7a8b6f;
+  --app-brand-hover: #69795f;
+  --app-accent: #c67b5c;
+
+  /* 卡片、顶栏、代码块 */
+  --app-radius: 12px;
+  --app-shadow: 0 2px 12px rgba(122, 139, 111, 0.1);
+  --app-shadow-hover: 0 8px 24px rgba(122, 139, 111, 0.18);
+  --app-navbar-bg: rgba(255, 255, 255, 0.82);
+  --app-code-bg: #f0ede4;
+
+  /* 大标题字体：明面带衬线的温润感 */
+  --app-title-font: 'Noto Serif SC', 'Source Han Serif SC', 'SimSun', serif;
+
+  /* 登录页左侧品牌区背景（明面：米绿柔和渐变） */
+  --app-login-hero: linear-gradient(150deg, #dfe5d3 0%, #b9c4a8 55%, #93a583 100%);
+
+  /* Element Plus 主色覆盖（按官方 light-x 混白规则预计算） */
+  --el-color-primary: #7a8b6f;
+  --el-color-primary-light-3: #a2ae9a;
+  --el-color-primary-light-5: #bdc5b7;
+  --el-color-primary-light-7: #d7dcd3;
+  --el-color-primary-light-8: #e4e7e2;
+  --el-color-primary-light-9: #f1f3f0;
+  --el-color-primary-dark-2: #626f59;
+}
+
+html.dark {
+  --app-bg: #0d0b14;
+  --app-card-bg: rgba(255, 255, 255, 0.04);
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-text-primary: #edebf5;
+  --app-text-secondary: #8d89a0;
+
+  --app-brand: #8b7cf6;
+  --app-brand-hover: #a99df8;
+  --app-accent: #8b7cf6;
+
+  --app-radius: 12px;
+  --app-shadow: none;
+  /* 暗面悬停 = 细描边发光（Linear 风格标志性效果） */
+  --app-shadow-hover: 0 0 0 1px rgba(139, 124, 246, 0.45), 0 0 20px rgba(139, 124, 246, 0.22);
+  --app-navbar-bg: rgba(13, 11, 20, 0.72);
+  --app-code-bg: rgba(255, 255, 255, 0.05);
+
+  /* 暗面标题用无衬线粗体，科技感 */
+  --app-title-font: inherit;
+
+  /* 登录页左侧品牌区背景（暗面：紫色光晕渐变） */
+  --app-login-hero:
+    radial-gradient(ellipse 60% 45% at 30% 25%, rgba(139, 124, 246, 0.45), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 75% 75%, rgba(93, 79, 184, 0.35), transparent 70%),
+    #0d0b14;
+
+  /* Element Plus 主色覆盖（暗面 light-x 与深背景混合预计算） */
+  --el-color-primary: #8b7cf6;
+  --el-color-primary-light-3: #655ab2;
+  --el-color-primary-light-5: #4c4485;
+  --el-color-primary-light-7: #332d58;
+  --el-color-primary-light-8: #262241;
+  --el-color-primary-light-9: #1a162b;
+  --el-color-primary-dark-2: #a296f8;
+
+  /* EP 深色组件底色带一点紫，而不是官方纯灰黑 */
+  --el-bg-color: #16131f;
+  --el-bg-color-overlay: #1c1827;
+  --el-fill-color-blank: #16131f;
+  --el-border-color: rgba(255, 255, 255, 0.12);
+  --el-border-color-light: rgba(255, 255, 255, 0.08);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.06);
+}
+
+/* 主题切换时颜色平滑过渡 */
+body,
+.el-card,
+.el-input__wrapper,
+.el-button,
+.el-table,
+.el-tag,
+.el-tabs__item,
+.el-pagination {
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+/* el-card 统一吃令牌：两主题下自动切换 */
+.el-card {
+  --el-card-bg-color: var(--app-card-bg);
+  border-color: var(--app-border);
+  border-radius: var(--app-radius);
+  color: var(--app-text-primary);
+}

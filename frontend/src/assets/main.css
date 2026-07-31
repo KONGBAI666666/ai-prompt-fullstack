@@ -13,6 +13,6 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
-  background-color: #f5f7fa;
-  color: #303133;
+  background-color: var(--app-bg);
+  color: var(--app-text-primary);
 }

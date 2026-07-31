@@ -73,7 +73,9 @@ async function handleDelete() {
       <template #header>
         <div class="detail-header">
           <div class="title-line">
-            <el-button link @click="router.back()">← 返回</el-button>
+            <el-button link @click="router.back()">
+              <el-icon><ArrowLeft /></el-icon>返回
+            </el-button>
             <span class="title">{{ detail.title }}</span>
             <el-tag v-if="detail.categoryName" size="small">{{ detail.categoryName }}</el-tag>
           </div>
@@ -82,7 +84,8 @@ async function handleDelete() {
               :type="detail.favorited ? 'warning' : 'default'"
               @click="toggleFavorite"
             >
-              {{ detail.favorited ? '⭐ 已收藏' : '☆ 收藏' }} {{ detail.favoriteCount }}
+              <el-icon><Star /></el-icon>
+              {{ detail.favorited ? '已收藏' : '收藏' }} {{ detail.favoriteCount }}
             </el-button>
             <el-button type="primary" @click="copyPrompt">复制使用</el-button>
             <!-- 编辑仅本人；删除本人或管理员（与后端 Service 规则一致） -->
@@ -93,8 +96,11 @@ async function handleDelete() {
       </template>
 
       <div class="meta">
-        👤 {{ detail.username }}　👁 {{ detail.viewCount }} 次浏览
-        <span v-if="detail.createTime">　🕐 {{ detail.createTime.replace('T', ' ') }}</span>
+        <el-icon><User /></el-icon> {{ detail.username }}
+        <el-icon><View /></el-icon> {{ detail.viewCount }} 次浏览
+        <span v-if="detail.createTime">
+          <el-icon><Clock /></el-icon> {{ detail.createTime.replace('T', ' ') }}
+        </span>
       </div>
 
       <p class="desc">{{ detail.description || '暂无描述' }}</p>
@@ -121,18 +127,33 @@ async function handleDelete() {
 }
 
 .title {
+  font-family: var(--app-title-font);
   font-size: 18px;
   font-weight: bold;
+  color: var(--app-text-primary);
 }
 
 .meta {
-  color: #909399;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--app-text-secondary);
   font-size: 13px;
   margin-bottom: 12px;
 }
 
+.meta .el-icon {
+  margin-left: 8px;
+}
+
+.meta span {
+  display: inline-flex;
+  align-items: center;
+}
+
 .desc {
-  color: #606266;
+  color: var(--app-text-secondary);
   font-size: 14px;
   margin-bottom: 16px;
 }
@@ -140,18 +161,19 @@ async function handleDelete() {
 .content-label {
   font-weight: bold;
   font-size: 14px;
+  color: var(--app-text-primary);
   margin-bottom: 8px;
 }
 
 /* 详情页正文完整展示，不限高度 */
 .content {
-  background: #f5f7fa;
+  background: var(--app-code-bg);
   border-radius: 6px;
   padding: 14px 16px;
   font-size: 14px;
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-all;
-  color: #303133;
+  color: var(--app-text-primary);
 }
 </style>

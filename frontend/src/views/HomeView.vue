@@ -106,7 +106,9 @@ async function copyPrompt(item) {
           <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
         </el-select>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button type="success" @click="router.push('/prompt/create')">✒️ 发布 Prompt</el-button>
+        <el-button type="primary" @click="router.push('/prompt/create')">
+          <el-icon class="btn-icon"><EditPen /></el-icon>发布 Prompt
+        </el-button>
       </div>
     </el-card>
 
@@ -125,7 +127,9 @@ async function copyPrompt(item) {
 
         <div class="card-footer">
           <span class="meta">
-            👤 {{ item.username }}　👁 {{ item.viewCount }}　⭐ {{ item.favoriteCount }}
+            <el-icon><User /></el-icon> {{ item.username }}
+            <el-icon><View /></el-icon> {{ item.viewCount }}
+            <el-icon><Star /></el-icon> {{ item.favoriteCount }}
           </span>
           <span class="actions">
             <el-button
@@ -182,6 +186,12 @@ async function copyPrompt(item) {
   margin-bottom: 14px;
 }
 
+/* 暗面：悬停时细描边发光；明面：阴影上浮 */
+.prompt-card:hover {
+  box-shadow: var(--app-shadow-hover);
+  transform: translateY(-2px);
+}
+
 .card-header {
   display: flex;
   align-items: center;
@@ -192,22 +202,23 @@ async function copyPrompt(item) {
 .card-title {
   font-size: 16px;
   font-weight: bold;
+  color: var(--app-text-primary);
   cursor: pointer;
 }
 
 .card-title:hover {
-  color: #409eff;
+  color: var(--app-brand);
 }
 
 .card-desc {
-  color: #909399;
+  color: var(--app-text-secondary);
   font-size: 13px;
   margin-bottom: 8px;
 }
 
-/* Prompt 正文：灰底代码块风格，保留换行，最多显示6行 */
+/* Prompt 正文：代码块风格，保留换行，最多显示6行 */
 .card-content {
-  background: #f5f7fa;
+  background: var(--app-code-bg);
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 13px;
@@ -216,7 +227,7 @@ async function copyPrompt(item) {
   word-break: break-all;
   max-height: 126px;
   overflow-y: auto;
-  color: #606266;
+  color: var(--app-text-secondary);
   margin-bottom: 10px;
 }
 
@@ -227,8 +238,19 @@ async function copyPrompt(item) {
 }
 
 .meta {
-  color: #909399;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-text-secondary);
   font-size: 13px;
+}
+
+.meta .el-icon {
+  margin-left: 6px;
+}
+
+.btn-icon {
+  margin-right: 4px;
 }
 
 .pagination {

@@ -67,8 +67,8 @@ function formatTime(t) {
             <el-tag v-if="userInfo.role === 'ADMIN'" type="danger" size="small">管理员</el-tag>
           </div>
           <div class="sub">
-            <span v-if="userInfo.email">📧 {{ userInfo.email }}　</span>
-            <span>🕐 注册于 {{ formatTime(userInfo.createTime) }}</span>
+            <span v-if="userInfo.email"><el-icon><Message /></el-icon> {{ userInfo.email }}　</span>
+            <span><el-icon><Clock /></el-icon> 注册于 {{ formatTime(userInfo.createTime) }}</span>
           </div>
         </div>
       </div>
@@ -100,7 +100,10 @@ function formatTime(t) {
               {{ item.title }}
               <el-tag v-if="item.categoryName" size="small">{{ item.categoryName }}</el-tag>
             </span>
-            <span class="row-meta">👁 {{ item.viewCount }}　⭐ {{ item.favoriteCount }}</span>
+            <span class="row-meta">
+              <el-icon><View /></el-icon> {{ item.viewCount }}
+              <el-icon><Star /></el-icon> {{ item.favoriteCount }}
+            </span>
           </div>
         </template>
       </div>
@@ -129,12 +132,12 @@ function formatTime(t) {
   gap: 16px;
 }
 
-/* 无头像图时用首字母圆形占位 */
+/* 无头像图时用首字母圆形占位，用品牌色 */
 .avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #409eff;
+  background: var(--app-brand);
   color: #fff;
   font-size: 24px;
   font-weight: bold;
@@ -153,11 +156,18 @@ function formatTime(t) {
 .username {
   font-size: 18px;
   font-weight: bold;
+  color: var(--app-text-primary);
 }
 
 .sub {
-  color: #909399;
+  color: var(--app-text-secondary);
   font-size: 13px;
+}
+
+.sub span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .row {
@@ -165,24 +175,32 @@ function formatTime(t) {
   justify-content: space-between;
   align-items: center;
   padding: 12px 4px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--app-border);
   cursor: pointer;
 }
 
 .row:hover .row-title {
-  color: #409eff;
+  color: var(--app-brand);
 }
 
 .row-title {
   font-size: 14px;
+  color: var(--app-text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .row-meta {
-  color: #909399;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--app-text-secondary);
   font-size: 13px;
+}
+
+.row-meta .el-icon {
+  margin-left: 6px;
 }
 
 .pagination {
