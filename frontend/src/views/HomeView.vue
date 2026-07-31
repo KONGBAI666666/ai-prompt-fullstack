@@ -116,7 +116,7 @@ async function copyPrompt(item) {
 
       <el-card v-for="item in list" :key="item.id" class="prompt-card" shadow="hover">
         <div class="card-header">
-          <span class="card-title">{{ item.title }}</span>
+          <span class="card-title" @click="router.push(`/prompt/${item.id}`)">{{ item.title }}</span>
           <el-tag v-if="item.categoryName" size="small">{{ item.categoryName }}</el-tag>
         </div>
 
@@ -192,6 +192,11 @@ async function copyPrompt(item) {
 .card-title {
   font-size: 16px;
   font-weight: bold;
+  cursor: pointer;
+}
+
+.card-title:hover {
+  color: #409eff;
 }
 
 .card-desc {
