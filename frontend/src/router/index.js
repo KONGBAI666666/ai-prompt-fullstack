@@ -25,6 +25,12 @@ const router = createRouter({
           component: () => import('@/views/PromptCreateView.vue'),
         },
         {
+          // 编辑复用新增页面组件，页面内部根据有无 :id 切换新增/编辑模式
+          path: 'prompt/edit/:id',
+          name: 'prompt-edit',
+          component: () => import('@/views/PromptCreateView.vue'),
+        },
+        {
           // 动态路由：:id 是参数，/prompt/1 和 /prompt/2 都命中这条
           // 注意：静态路由 /prompt/create 优先级高于动态参数，不会被误匹配
           path: 'prompt/:id',

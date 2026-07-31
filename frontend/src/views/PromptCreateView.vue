@@ -1,13 +1,17 @@
 <script setup>
-// Prompt 新增页：CRUD 中的 C
-// 链路：本页面 → api/prompt.js createPrompt → POST /api/prompt → PromptController.create
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+// Prompt 新增/编辑页（双模式复用）：CRUD 中的 C 和 U
+// /prompt/create → 新增模式：POST /api/prompt
+// /prompt/edit/:id → 编辑模式：先加载旧数据，提交时 PUT /api/prompt/{id}
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { createPrompt } from '@/api/prompt'
+import { createPrompt, updatePrompt, getPromptDetail } from '@/api/prompt'
 import { getCategoryList } from '@/api/category'
 
+const route = useRoute()
 const router = useRouter()
+// computed：路由带 id 参数就是编辑模式
+const isEdit = computed(() => !!route.params.id)
 const formRef = ref() // el-form 组件实例，用来触发校验
 const submitting = ref(false)
 const categories = ref([])
@@ -32,6 +36,16 @@ const rules = {
 
 onMounted(async () => {
   categories.value = await getCategoryList()
+  // 编辑模式：加载旧数据回填表单
+  if (isEdit.value) {
+    const detail = await getPromptDetail(route.params.id)
+    form.value = {
+      title: detail.title,
+      categoryId: detail.categoryId,
+      description: detail.description,
+      content: detail.content,
+    }
+  }
 })
 
 async function handleSubmit() {
@@ -39,9 +53,15 @@ async function handleSubmit() {
   await formRef.value.validate()
   submitting.value = true
   try {
-    await createPrompt(form.value)
-    ElMessage.success('发布成功')
-    router.push('/')
+    if (isEdit.value) {
+      await updatePrompt(route.params.id, form.value)
+      ElMessage.success('修改成功')
+      router.push(`/prompt/${route.params.id}`)
+    } else {
+      await createPrompt(form.value)
+      ElMessage.success('发布成功')
+      router.push('/')
+    }
   } finally {
     submitting.value = false
   }
@@ -51,7 +71,7 @@ async function handleSubmit() {
 <template>
   <el-card>
     <template #header>
-      <span class="page-title">✍️ 发布 Prompt</span>
+      <span class="page-title">{{ isEdit ? '✏️ 编辑 Prompt' : '✍️ 发布 Prompt' }}</span>
     </template>
 
     <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
@@ -86,7 +106,9 @@ async function handleSubmit() {
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">发 布</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+          {{ isEdit ? '保 存' : '发 布' }}
+        </el-button>
         <el-button @click="router.back()">取 消</el-button>
       </el-form-item>
     </el-form>
