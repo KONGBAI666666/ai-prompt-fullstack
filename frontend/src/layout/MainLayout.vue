@@ -28,6 +28,10 @@ async function handleLogout() {
       <div class="navbar-inner">
         <div class="brand" @click="router.push('/')">🚀 AI 提示词管理平台</div>
         <div class="right">
+          <!-- 管理后台入口：仅管理员可见（后端接口另有 @SaCheckRole 兼底） -->
+          <el-button v-if="user?.role === 'ADMIN'" link type="primary" @click="router.push('/admin')">
+            管理后台
+          </el-button>
           <span class="welcome" @click="router.push('/profile')" title="个人中心">
             {{ user?.nickname || user?.username }}
             <el-tag v-if="user?.role === 'ADMIN'" type="danger" size="small">管理员</el-tag>

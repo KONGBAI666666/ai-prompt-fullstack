@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken } from '@/utils/auth'
+import { getToken, getUser } from '@/utils/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,6 +42,13 @@ const router = createRouter({
           name: 'profile',
           component: () => import('@/views/ProfileView.vue'),
         },
+        {
+          path: 'admin',
+          name: 'admin',
+          component: () => import('@/views/AdminView.vue'),
+          // meta：路由自定义标记，守卫里用它做角色检查
+          meta: { requiresAdmin: true },
+        },
       ],
     },
   ],
@@ -56,6 +63,10 @@ router.beforeEach((to) => {
   }
   // 已登录还访问登录页，直接送回首页
   if (token && to.path === '/login') {
+    return '/'
+  }
+  // 管理员页面：非 ADMIN 角色踢回首页（体验层，后端 @SaCheckRole 才是真正防线）
+  if (to.meta.requiresAdmin && getUser()?.role !== 'ADMIN') {
     return '/'
   }
 })
