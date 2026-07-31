@@ -37,6 +37,11 @@ const router = createRouter({
           name: 'prompt-detail',
           component: () => import('@/views/PromptDetailView.vue'),
         },
+        {
+          path: 'profile',
+          name: 'profile',
+          component: () => import('@/views/ProfileView.vue'),
+        },
       ],
     },
   ],

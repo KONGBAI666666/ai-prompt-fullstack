@@ -26,9 +26,9 @@ async function handleLogout() {
   <div class="layout">
     <header class="navbar">
       <div class="navbar-inner">
-        <div class="brand">🚀 AI 提示词管理平台</div>
+        <div class="brand" @click="router.push('/')">🚀 AI 提示词管理平台</div>
         <div class="right">
-          <span class="welcome">
+          <span class="welcome" @click="router.push('/profile')" title="个人中心">
             {{ user?.nickname || user?.username }}
             <el-tag v-if="user?.role === 'ADMIN'" type="danger" size="small">管理员</el-tag>
           </span>
@@ -66,6 +66,7 @@ async function handleLogout() {
   font-size: 18px;
   font-weight: bold;
   color: #409eff;
+  cursor: pointer;
 }
 
 .right {
@@ -77,6 +78,11 @@ async function handleLogout() {
 .welcome {
   color: #606266;
   font-size: 14px;
+  cursor: pointer;
+}
+
+.welcome:hover {
+  color: #409eff;
 }
 
 .content {
