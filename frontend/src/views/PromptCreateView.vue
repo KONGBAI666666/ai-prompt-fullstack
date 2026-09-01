@@ -1,16 +1,15 @@
 <script setup>
-// Prompt 新增/编辑页（双模式复用）：CRUD 中的 C 和 U
-// /prompt/create → 新增模式：POST /api/prompt
-// /prompt/edit/:id → 编辑模式：先加载旧数据，提交时 PUT /api/prompt/{id}
+// Prompt 新增/编辑页（双模式复用）
+// /prompt/create → 新增：POST /api/prompt
+// /prompt/edit/:id → 编辑：先加载旧数据回填，提交时 PUT /api/prompt/{id}
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { createPrompt, updatePrompt, getPromptDetail } from '@/api/prompt'
+import { createPrompt, updatePrompt, getPromptForEdit } from '@/api/prompt'
 import { getCategoryList } from '@/api/category'
 
 const route = useRoute()
 const router = useRouter()
-// computed：路由带 id 参数就是编辑模式
 const isEdit = computed(() => !!route.params.id)
 const formRef = ref() // el-form 组件实例，用来触发校验
 const submitting = ref(false)
@@ -36,9 +35,9 @@ const rules = {
 
 onMounted(async () => {
   categories.value = await getCategoryList()
-  // 编辑模式：加载旧数据回填表单
+  // 编辑模式：加载旧数据回填表单（用不增加浏览次数的接口，避免污染计数）
   if (isEdit.value) {
-    const detail = await getPromptDetail(route.params.id)
+    const detail = await getPromptForEdit(route.params.id)
     form.value = {
       title: detail.title,
       categoryId: detail.categoryId,
@@ -49,7 +48,7 @@ onMounted(async () => {
 })
 
 async function handleSubmit() {
-  // validate()：校验不通过会 reject，直接中断后面的提交
+  // 校验不通过会 reject，直接中断提交
   await formRef.value.validate()
   submitting.value = true
   try {

@@ -46,7 +46,7 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Sa-Token 登录认证（第三阶段使用，先引入） -->
+        <!-- Sa-Token 登录认证 -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-spring-boot3-starter</artifactId>
@@ -62,12 +62,6 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.7.0</version>
-        </dependency>
-        <!-- 工具库 -->
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>5.8.16</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

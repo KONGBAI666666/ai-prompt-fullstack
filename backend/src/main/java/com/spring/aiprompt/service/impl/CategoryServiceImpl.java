@@ -10,6 +10,7 @@ import com.spring.aiprompt.mapper.CategoryMapper;
 import com.spring.aiprompt.mapper.PromptMapper;
 import com.spring.aiprompt.service.CategoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,7 +38,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         Category category = new Category();
         category.setName(dto.getName());
         category.setDescription(dto.getDescription());
-        save(category);
+        try {
+            save(category);
+        } catch (DuplicateKeyException e) {
+            // 并发下绕过上方查重时，由唯一索引兜底并转为友好提示
+            throw new BusinessException("分类名称已存在");
+        }
     }
 
     @Override

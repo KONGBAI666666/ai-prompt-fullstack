@@ -6,6 +6,7 @@ import { getUserInfo } from '@/api/user'
 import { getMyPrompts } from '@/api/prompt'
 import { getFavoriteList } from '@/api/favorite'
 import { getHistoryList } from '@/api/history'
+import { formatTime } from '@/utils/format'
 
 const router = useRouter()
 const userInfo = ref(null) // UserVO，从后端实时拉取（比localStorage新鲜）
@@ -48,10 +49,6 @@ onMounted(async () => {
 // 我的Prompt/收藏列表点击跳详情；使用记录用 promptId
 function goDetail(item) {
   router.push(`/prompt/${item.promptId || item.id}`)
-}
-
-function formatTime(t) {
-  return t ? t.replace('T', ' ').slice(0, 19) : ''
 }
 </script>
 
@@ -201,11 +198,5 @@ function formatTime(t) {
 
 .row-meta .el-icon {
   margin-left: 6px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
 }
 </style>

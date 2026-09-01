@@ -26,6 +26,9 @@ public interface PromptService extends IService<Prompt> {
     /** 详情：浏览次数原子 +1 */
     PromptVO detail(Long id);
 
+    /** 编辑回填：仅查详情，不增加浏览次数 */
+    PromptVO getForEdit(Long id);
+
     /** 修改：仅本人可改，否则 403 */
     void updatePrompt(Long id, PromptDTO dto);
 

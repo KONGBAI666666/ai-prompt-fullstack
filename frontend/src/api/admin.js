@@ -20,3 +20,11 @@ export function getAdminPromptList(params) {
 export function getStats() {
   return request.get('/admin/stats')
 }
+
+// 导出 Prompt 查询结果为 CSV 文件（数据转储），可按关键词过滤
+export function exportPrompts(keyword) {
+  return request.get('/admin/prompt/export', {
+    params: keyword ? { keyword } : {},
+    responseType: 'blob',
+  })
+}

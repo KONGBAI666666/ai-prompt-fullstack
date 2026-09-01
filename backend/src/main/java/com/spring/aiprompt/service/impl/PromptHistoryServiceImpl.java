@@ -52,7 +52,7 @@ public class PromptHistoryServiceImpl extends ServiceImpl<PromptHistoryMapper, P
             voPage.setRecords(new ArrayList<>());
             return voPage;
         }
-        // 批量查 Prompt 标题（Prompt 可能已被物理删除，删除的显示占位标题）
+        // 批量查 Prompt 标题（删除 Prompt 时已在同一事务级联清理历史记录，标题必然存在）
         Set<Long> promptIds = page.getRecords().stream()
                 .map(PromptHistory::getPromptId).collect(Collectors.toSet());
         Map<Long, Prompt> promptMap = promptMapper.selectBatchIds(promptIds).stream()
@@ -61,8 +61,7 @@ public class PromptHistoryServiceImpl extends ServiceImpl<PromptHistoryMapper, P
             HistoryVO vo = new HistoryVO();
             vo.setId(h.getId());
             vo.setPromptId(h.getPromptId());
-            Prompt prompt = promptMap.get(h.getPromptId());
-            vo.setPromptTitle(prompt != null ? prompt.getTitle() : "[已删除]");
+            vo.setPromptTitle(promptMap.get(h.getPromptId()).getTitle());
             vo.setUseTime(h.getUseTime());
             return vo;
         }).toList());

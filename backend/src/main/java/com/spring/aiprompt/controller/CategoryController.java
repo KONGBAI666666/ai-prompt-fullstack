@@ -37,7 +37,7 @@ public class CategoryController {
         return Result.success(categoryService.listAll());
     }
 
-    /** 新增分类（管理员，注解在第三阶段注册 SaInterceptor 后生效） */
+    /** 新增分类（管理员） */
     @Operation(summary = "新增分类（管理员）")
     @SaCheckRole("ADMIN")
     @PostMapping

@@ -30,12 +30,12 @@ class AiPromptApplicationTests {
 
     @Test
     void initDataLoaded() {
-        // 初始用户 2 个：admin / test
+        // 初始用户：admin / test
         List<User> users = userMapper.selectList(null);
         assertTrue(users.size() >= 2, "应至少存在 admin 和 test 两个初始用户");
 
-        // 初始分类 6 个（第二阶段可能新增分类，故用 >= 断言）
+        // 初始分类 10 个（管理员可新增分类，故用 >= 断言）
         List<Category> categories = categoryMapper.selectList(null);
-        assertTrue(categories.size() >= 6, "应至少存在 6 条默认分类");
+        assertTrue(categories.size() >= 10, "应至少存在 10 条默认分类");
     }
 }

@@ -1,26 +1,40 @@
 <script setup>
-// 登录页：项目的第一个完整前后端联调页面
-// 链路：本页面 → api/user.js → api/request.js → POST /api/user/login → 后端
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { login } from '@/api/user'
+import { login, getCaptcha } from '@/api/user'
 import { setToken, setUser } from '@/utils/auth'
 import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 
-// ref()：把普通值变成响应式数据，模板里用到它的地方会随值变化自动刷新
 const form = ref({
   username: '',
   password: '',
+  captchaId: '',
+  captchaCode: '',
 })
+const captchaImg = ref('')
 const loading = ref(false)
+
+// 拉取一张新验证码（后端一次性校验，所以失败后必须刷新）
+async function refreshCaptcha() {
+  const data = await getCaptcha()
+  form.value.captchaId = data.id
+  captchaImg.value = data.image
+  form.value.captchaCode = ''
+}
+
+onMounted(refreshCaptcha)
 
 async function handleLogin() {
   if (!form.value.username || !form.value.password) {
     ElMessage.warning('请输入用户名和密码')
+    return
+  }
+  if (!form.value.captchaCode) {
+    ElMessage.warning('请输入验证码')
     return
   }
   loading.value = true
@@ -31,6 +45,9 @@ async function handleLogin() {
     setUser(data.user)
     ElMessage.success('登录成功')
     router.push('/')
+  } catch {
+    // 验证码已一次性失效，无论哪种失败都刷新，避免用户拿旧码重试
+    refreshCaptcha()
   } finally {
     // 无论成败都恢复按钮（失败的错误提示由拦截器统一弹出）
     loading.value = false
@@ -80,6 +97,27 @@ async function handleLogin() {
             </el-input>
           </el-form-item>
           <el-form-item>
+            <div class="captcha-row">
+              <el-input
+                v-model="form.captchaCode"
+                placeholder="验证码"
+                size="large"
+                maxlength="4"
+                class="captcha-input"
+              >
+                <template #prefix><el-icon><Key /></el-icon></template>
+              </el-input>
+              <img
+                v-if="captchaImg"
+                :src="captchaImg"
+                alt="验证码"
+                title="看不清？点击换一张"
+                class="captcha-img"
+                @click="refreshCaptcha"
+              />
+            </div>
+          </el-form-item>
+          <el-form-item>
             <el-button
               type="primary"
               size="large"
@@ -91,8 +129,6 @@ async function handleLogin() {
             </el-button>
           </el-form-item>
         </el-form>
-
-        <p class="tip">测试账号：test / 123456　管理员：admin / admin123</p>
       </div>
     </div>
   </div>
@@ -115,7 +151,7 @@ async function handleLogin() {
   color: var(--app-text-secondary);
 }
 
-/* 左右分栏面板：参考图的结构 */
+/* 左右分栏面板 */
 .login-panel {
   width: 860px;
   max-width: calc(100vw - 32px);
@@ -204,15 +240,26 @@ async function handleLogin() {
   width: 100%;
 }
 
-.tip {
-  text-align: center;
-  color: var(--app-text-secondary);
-  font-size: 12px;
-  margin-top: 8px;
+.captcha-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
 }
 
-/* 窄屏隐藏左侧品牌区，只留表单 */
-@media (max-width: 640px) {
+.captcha-input {
+  flex: 1;
+}
+
+.captcha-img {
+  height: 40px;
+  width: 110px;
+  border-radius: 6px;
+  border: 1px solid var(--app-border);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 窄屏隐藏左侧品牌区，只留表单 */@media (max-width: 640px) {
   .hero {
     display: none;
   }

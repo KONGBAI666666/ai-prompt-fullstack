@@ -19,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 收藏业务实现
@@ -93,10 +94,12 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite> i
         }
         List<Long> promptIds = favoritePage.getRecords().stream().map(Favorite::getPromptId).toList();
         List<Prompt> prompts = promptMapper.selectBatchIds(promptIds);
-        // 保持收藏时间倒序（selectBatchIds 不保证顺序）
+        // 保持收藏时间倒序（selectBatchIds 不保证顺序），用 Map 一次定位，避免 O(n²)
+        Map<Long, Prompt> promptMap = prompts.stream()
+                .collect(Collectors.toMap(Prompt::getId, p -> p));
+        // 删除 Prompt 时已级联清理收藏记录，收藏列表里的 Prompt 必然存在
         List<Prompt> ordered = promptIds.stream()
-                .map(id -> prompts.stream().filter(p -> p.getId().equals(id)).findFirst().orElse(null))
-                .filter(Objects::nonNull)
+                .map(promptMap::get)
                 .toList();
         voPage.setRecords(promptService.toVOList(ordered));
         return voPage;

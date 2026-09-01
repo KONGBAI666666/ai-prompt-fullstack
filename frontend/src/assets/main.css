@@ -16,3 +16,10 @@ body {
   background-color: var(--app-bg);
   color: var(--app-text-primary);
 }
+
+/* 各列表页共用的分页容器 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}

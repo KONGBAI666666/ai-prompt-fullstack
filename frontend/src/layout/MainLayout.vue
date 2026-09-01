@@ -48,7 +48,7 @@ async function handleLogout() {
             管理后台
           </el-button>
           <span class="welcome" @click="router.push('/profile')" title="个人中心">
-            {{ user?.nickname || user?.username }}
+            {{ user?.username }}
             <el-tag v-if="user?.role === 'ADMIN'" type="danger" size="small">管理员</el-tag>
           </span>
           <el-button link type="danger" @click="handleLogout">退出登录</el-button>

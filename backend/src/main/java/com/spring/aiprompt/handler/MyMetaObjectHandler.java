@@ -1,7 +1,6 @@
 package com.spring.aiprompt.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
  * MyBatis-Plus 字段自动填充：
  * 插入时填充 createTime、updateTime、useTime（使用记录表），更新时填充 updateTime
  */
-@Slf4j
 @Component
 public class MyMetaObjectHandler implements MetaObjectHandler {
 

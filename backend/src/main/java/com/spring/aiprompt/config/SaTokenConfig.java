@@ -31,6 +31,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 .addExclude(
                         "/user/register",
                         "/user/login",
+                        "/user/captcha",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",

@@ -15,7 +15,7 @@ AI 提示词（Prompt）管理系统：实现 Prompt 的创建、分类、搜索
 | 接口文档 | springdoc-openapi（Swagger UI） | 2.7.0 |
 | 参数校验 | spring-boot-starter-validation | - |
 | 数据库 | MySQL | 8.x |
-| 工具库 | Lombok、Hutool | - |
+| 工具库 | Lombok | - |
 | 构建 | Maven | - |
 
 ## 二、项目结构
@@ -47,7 +47,7 @@ src/main/resources/
 本地安装 MySQL 8.x，用 Navicat（或命令行）执行一次 `src/main/resources/sql/init.sql`：
 
 - 自动创建数据库 `ai_prompt_db` 和 5 张表（DROP 重建，可重复执行）
-- 写入初始数据：6 个默认分类、3 条示例 Prompt、2 个账号
+- 写入初始数据：10 个默认分类、12 条示例 Prompt、12 个账号（admin / test 可用于登录，其余为演示用户）
 
 ### 2. 修改数据库连接（如有需要）
 
@@ -83,7 +83,7 @@ mvn spring-boot:run
 3. 点页面右上角 **Authorize** 按钮，粘贴 token（不加 Bearer 前缀），点 Authorize → Close
 4. 之后所有请求自动携带 token；换账号调试时先 Logout 再重新 Authorize
 
-## 五、接口清单（共 22 个，前缀 /api）
+## 五、接口清单（共 23 个，前缀 /api）
 
 ### 用户 /user
 
@@ -102,6 +102,7 @@ mvn spring-boot:run
 | /prompt/list | GET | 登录 | 分页列表，支持 keyword（匹配标题/描述）+ categoryId 筛选 |
 | /prompt/my | GET | 登录 | 我的 Prompt 分页列表 |
 | /prompt/{id} | GET | 登录 | 详情（浏览数原子 +1） |
+| /prompt/{id}/edit | GET | 本人 | 编辑页回填数据（不计浏览数） |
 | /prompt/{id} | PUT | 本人 | 修改（非本人返回 403） |
 | /prompt/{id} | DELETE | 本人或 ADMIN | 物理删除 + 级联清理收藏/使用记录 |
 
@@ -166,4 +167,4 @@ mvn spring-boot:run
 
 ## 八、二期规划（当前版本明确排除）
 
-Redis 缓存、AI 接口调用（Prompt 效果测试）、Prompt 评分、公开分享（visibility 字段已预留）、Elasticsearch 全文检索。
+Redis 缓存、AI 接口调用（Prompt 效果测试）、Prompt 评分、公开分享、Elasticsearch 全文检索。

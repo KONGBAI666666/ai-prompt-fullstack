@@ -1,6 +1,7 @@
 package com.spring.aiprompt.service;
 
 // MyBatis-Plus 3.5.10+ 中 IService 已迁移至 spring 模块包
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.spring.aiprompt.dto.LoginDTO;
 import com.spring.aiprompt.dto.RegisterDTO;
@@ -21,6 +22,12 @@ public interface UserService extends IService<User> {
 
     /** 当前登录用户信息（不含密码） */
     UserVO getCurrentUser();
+
+    /** 管理员：用户分页列表（UserVO 不含密码） */
+    Page<UserVO> pageUsers(long pageNum, long pageSize);
+
+    /** 管理员：启用/禁用用户（status 1 正常 / 0 禁用，禁用后踢下线） */
+    void updateUserStatus(Long id, Integer status);
 
     /** User 转 UserVO（脱敏，供管理员用户列表复用） */
     UserVO toVO(User user);

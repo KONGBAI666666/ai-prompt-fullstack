@@ -4,7 +4,9 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.spring.aiprompt.common.Result;
 import com.spring.aiprompt.dto.LoginDTO;
 import com.spring.aiprompt.dto.RegisterDTO;
+import com.spring.aiprompt.service.CaptchaService;
 import com.spring.aiprompt.service.UserService;
+import com.spring.aiprompt.vo.CaptchaVO;
 import com.spring.aiprompt.vo.LoginVO;
 import com.spring.aiprompt.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final CaptchaService captchaService;
+
+    /** 图形验证码（公开接口）：登录前先领一张，一次性使用 */
+    @Operation(summary = "获取图形验证码")
+    @GetMapping("/captcha")
+    public Result<CaptchaVO> captcha() {
+        return Result.success(captchaService.generate());
+    }
 
     /** 注册（公开接口） */
     @Operation(summary = "用户注册")

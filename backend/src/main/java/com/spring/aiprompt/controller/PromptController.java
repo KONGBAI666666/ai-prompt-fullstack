@@ -64,6 +64,13 @@ public class PromptController {
         return Result.success(promptService.detail(id));
     }
 
+    /** 编辑回填（不增加浏览次数） */
+    @Operation(summary = "编辑回填详情（不增加浏览次数）")
+    @GetMapping("/{id}/edit")
+    public Result<PromptVO> detailForEdit(@PathVariable Long id) {
+        return Result.success(promptService.getForEdit(id));
+    }
+
     /** 修改（仅本人） */
     @Operation(summary = "修改自己的Prompt")
     @PutMapping("/{id}")

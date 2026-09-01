@@ -16,7 +16,7 @@ public class HistoryVO {
     /** Prompt ID */
     private Long promptId;
 
-    /** Prompt 标题（Prompt 已被删除时为"[已删除]"） */
+    /** Prompt 标题 */
     private String promptTitle;
 
     /** 使用时间 */

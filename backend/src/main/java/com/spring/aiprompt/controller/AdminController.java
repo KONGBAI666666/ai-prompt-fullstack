@@ -1,12 +1,9 @@
 package com.spring.aiprompt.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
-import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spring.aiprompt.common.Result;
 import com.spring.aiprompt.entity.Prompt;
-import com.spring.aiprompt.entity.User;
-import com.spring.aiprompt.exception.BusinessException;
 import com.spring.aiprompt.service.FavoriteService;
 import com.spring.aiprompt.service.PromptService;
 import com.spring.aiprompt.service.UserService;
@@ -14,6 +11,7 @@ import com.spring.aiprompt.vo.PromptVO;
 import com.spring.aiprompt.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,12 +20,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * 管理员接口：用户管理 / 全部Prompt / 统计（全部需要 ADMIN 角色）
+ * 管理员接口：用户管理 / 全部Prompt / 统计 / 数据导出（全部需要 ADMIN 角色）
  */
 @Tag(name = "管理员")
 @RestController
@@ -45,34 +50,14 @@ public class AdminController {
     @GetMapping("/user/list")
     public Result<Page<UserVO>> userList(@RequestParam(defaultValue = "1") long pageNum,
                                          @RequestParam(defaultValue = "10") long pageSize) {
-        Page<User> page = userService.lambdaQuery()
-                .orderByDesc(User::getCreateTime)
-                .page(new Page<>(pageNum, pageSize));
-        Page<UserVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        voPage.setRecords(page.getRecords().stream().map(userService::toVO).toList());
-        return Result.success(voPage);
+        return Result.success(userService.pageUsers(pageNum, pageSize));
     }
 
     /** 启用/禁用用户：status 1 正常 / 0 禁用 */
     @Operation(summary = "启用/禁用用户（管理员）")
     @PutMapping("/user/{id}/status")
     public Result<Void> updateUserStatus(@PathVariable Long id, @RequestParam Integer status) {
-        if (status == null || (status != 0 && status != 1)) {
-            throw new BusinessException("status只能为0或1");
-        }
-        User user = userService.getById(id);
-        if (user == null) {
-            throw new BusinessException("用户不存在");
-        }
-        if ("ADMIN".equals(user.getRole())) {
-            throw new BusinessException("不能禁用管理员账号");
-        }
-        user.setStatus(status);
-        userService.updateById(user);
-        // 禁用后立即踢下线，否则已持有的 token 在过期前仍可正常访问
-        if (status == 0) {
-            StpUtil.kickout(id);
-        }
+        userService.updateUserStatus(id, status);
         return Result.success();
     }
 
@@ -83,6 +68,58 @@ public class AdminController {
                                              @RequestParam(defaultValue = "10") long pageSize,
                                              @RequestParam(required = false) String keyword) {
         return Result.success(promptService.pageList(pageNum, pageSize, keyword, null, null));
+    }
+
+    /**
+     * 数据导出：把当前查询结果（可按关键词过滤）导出为 CSV 文件（带 UTF-8 BOM，Excel 直接打开不乱码）。
+     * 属于数据转储子系统：查询结果转存为文件。
+     */
+    @Operation(summary = "导出Prompt查询结果为CSV（管理员）")
+    @GetMapping("/prompt/export")
+    public void exportPrompts(@RequestParam(required = false) String keyword,
+                              HttpServletResponse response) throws IOException {
+        List<PromptVO> records = promptService
+                .pageList(1, 10000, keyword, null, null)
+                .getRecords();
+
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String fileName = "Prompt数据_" + timestamp + ".csv";
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"prompt_data_" + timestamp + ".csv\"; filename*=UTF-8''" + encoded);
+
+        try (PrintWriter writer = response.getWriter()) {
+            // BOM：让 Excel 识别为 UTF-8
+            writer.write('\uFEFF');
+            writer.println("ID,标题,内容,描述,分类,作者,浏览数,收藏数,发布时间");
+            for (PromptVO p : records) {
+                writer.println(String.join(",",
+                        csv(p.getId()),
+                        csv(p.getTitle()),
+                        csv(p.getContent()),
+                        csv(p.getDescription()),
+                        csv(p.getCategoryName()),
+                        csv(p.getUsername()),
+                        csv(p.getViewCount()),
+                        csv(p.getFavoriteCount()),
+                        csv(p.getCreateTime())));
+            }
+            writer.flush();
+        }
+    }
+
+    /** CSV 字段转义：含逗号/引号/换行的字段加双引号包裹，内部引号翻倍 */
+    private String csv(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String s = value.toString();
+        if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
+            return "\"" + s.replace("\"", "\"\"") + "\"";
+        }
+        return s;
     }
 
     /** 统计：用户总数 / Prompt总数 / 收藏总数 / 今日新增Prompt数 */

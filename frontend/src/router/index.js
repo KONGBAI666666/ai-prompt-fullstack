@@ -31,8 +31,7 @@ const router = createRouter({
           component: () => import('@/views/PromptCreateView.vue'),
         },
         {
-          // 动态路由：:id 是参数，/prompt/1 和 /prompt/2 都命中这条
-          // 注意：静态路由 /prompt/create 优先级高于动态参数，不会被误匹配
+          // 动态路由：/prompt/1、/prompt/2 都命中这条（静态路由 /prompt/create 优先匹配）
           path: 'prompt/:id',
           name: 'prompt-detail',
           component: () => import('@/views/PromptDetailView.vue'),
@@ -46,7 +45,6 @@ const router = createRouter({
           path: 'admin',
           name: 'admin',
           component: () => import('@/views/AdminView.vue'),
-          // meta：路由自定义标记，守卫里用它做角色检查
           meta: { requiresAdmin: true },
         },
       ],

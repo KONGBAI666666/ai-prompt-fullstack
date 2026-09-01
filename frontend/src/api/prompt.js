@@ -17,6 +17,11 @@ export function getPromptDetail(id) {
   return request.get(`/prompt/${id}`)
 }
 
+// 编辑回填（不增加浏览次数）
+export function getPromptForEdit(id) {
+  return request.get(`/prompt/${id}/edit`)
+}
+
 // 创建：{title, content, description?, categoryId}
 export function createPrompt(data) {
   return request.post('/prompt', data)

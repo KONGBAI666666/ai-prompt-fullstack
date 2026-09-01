@@ -15,9 +15,8 @@ mybatis-plus:
   configuration:
     # 开发期打印 SQL，便于学习观察
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    map-underscore-to-camel-case: true
 
-# Sa-Token 配置（第三阶段启用登录，先放好）
+# Sa-Token 配置
 sa-token:
   token-name: Authorization
   timeout: 2592000
@@ -30,3 +29,7 @@ sa-token:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+# CORS 白名单：只允许本地前端跨域，生产环境改为真实域名（多个用逗号分隔）
+cors:
+  allowed-origins: http://localhost:5173

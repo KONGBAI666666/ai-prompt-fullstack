@@ -2,7 +2,6 @@ import './assets/main.css'
 import './assets/theme.css'
 
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 // Element Plus：UI 组件库，全局注册后所有页面可直接使用 el-xxx 组件
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -21,7 +20,6 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-app.use(createPinia())
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
 

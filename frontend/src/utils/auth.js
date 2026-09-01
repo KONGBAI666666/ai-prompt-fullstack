@@ -12,7 +12,13 @@ export function setToken(token) {
 
 export function getUser() {
   const raw = localStorage.getItem(USER_KEY)
-  return raw ? JSON.parse(raw) : null
+  if (!raw) return null
+  // localStorage 中的值可能损坏（被手动改动/插件覆盖），解析失败按未登录处理，避免路由守卫崩溃白屏
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
 }
 
 export function setUser(user) {

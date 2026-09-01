@@ -24,6 +24,10 @@ request.interceptors.request.use((config) => {
 // 成功时直接返回 data，页面里拿到的就是业务数据本身，不用再写 res.data.data
 request.interceptors.response.use(
   (response) => {
+    // 文件下载（blob）直接返回二进制数据，不拆 Result 信封
+    if (response.config.responseType === 'blob') {
+      return response.data
+    }
     const res = response.data
     if (res.code !== 200) {
       ElMessage.error(res.message || '请求失败')

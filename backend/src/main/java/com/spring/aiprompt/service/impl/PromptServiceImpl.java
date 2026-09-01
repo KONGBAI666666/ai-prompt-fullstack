@@ -1,8 +1,6 @@
 package com.spring.aiprompt.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
@@ -21,6 +19,7 @@ import com.spring.aiprompt.mapper.UserMapper;
 import com.spring.aiprompt.service.PromptService;
 import com.spring.aiprompt.vo.PromptVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,7 +62,7 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
     @Override
     public Page<PromptVO> pageList(long pageNum, long pageSize, String keyword, Long categoryId, Long onlyUserId) {
         Page<Prompt> page = lambdaQuery()
-                .and(StrUtil.isNotBlank(keyword), w -> w
+                .and(keyword != null && !keyword.isBlank(), w -> w
                         .like(Prompt::getTitle, keyword)
                         .or()
                         .like(Prompt::getDescription, keyword))
@@ -84,7 +83,17 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
         }
         // 浏览次数数据库原子 +1（不采用查出改回，避免并发丢更新）
         lambdaUpdate().eq(Prompt::getId, id).setSql("view_count = view_count + 1").update();
-        prompt.setViewCount(prompt.getViewCount() == null ? 1 : prompt.getViewCount() + 1);
+        prompt.setViewCount(prompt.getViewCount() + 1);
+        return toVOList(List.of(prompt)).get(0);
+    }
+
+    @Override
+    public PromptVO getForEdit(Long id) {
+        Prompt prompt = getById(id);
+        if (prompt == null) {
+            throw new BusinessException("Prompt不存在");
+        }
+        // 编辑回填只读数据，不触碰浏览计数，避免每次进入编辑页都污染 view_count
         return toVOList(List.of(prompt)).get(0);
     }
 
@@ -155,7 +164,8 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
                     .forEach(f -> favoritedIds.add(f.getPromptId()));
         }
         return prompts.stream().map(p -> {
-            PromptVO vo = BeanUtil.copyProperties(p, PromptVO.class);
+            PromptVO vo = new PromptVO();
+            BeanUtils.copyProperties(p, vo);
             vo.setCategoryName(categoryNames.get(p.getCategoryId()));
             vo.setUsername(usernames.get(p.getUserId()));
             vo.setFavorited(favoritedIds.contains(p.getId()));

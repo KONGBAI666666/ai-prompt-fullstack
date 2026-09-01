@@ -6,14 +6,14 @@
 
 ```
 ┌─────────────────────── 浏览器 ───────────────────────┐
-│                                                      │
-│   Vue 3 页面（LoginView / HomeView / MainLayout）     │
-│                        │                             │
-│                 api 模块（user.js 等）                 │
-│                        │                             │
-│           Axios 封装（request.js 拦截器）              │
-│         请求自动携带 Authorization: token              │
-└────────────────────────┼─────────────────────────────┘
+│                                                     │
+│   Vue 3 页面（LoginView / HomeView / MainLayout）    │
+│                        │                            │
+│                 api 模块（user.js 等）               │
+│                        │                            │
+│           Axios 封装（request.js 拦截器）            │
+│         请求自动携带 Authorization: token            │
+└────────────────────────┼────────────────────────────┘
                          │  HTTP + JSON
                          │  （开发期经 Vite 代理 /api → 8080）
 ┌────────────────────────┼─────────────────────────────┐
@@ -45,13 +45,15 @@
 | 模块 | 状态 |
 | --- | --- |
 | 用户注册 / 登录 / 登出（Sa-Token 认证） | ✅ |
+| 图形验证码（服务端生成、一次性校验） | ✅ |
 | RBAC 权限控制（USER / ADMIN） | ✅ |
-| Prompt 管理 22 个 REST 接口 + Swagger 文档 | ✅ |
-| 前端登录页（token 保存 + 路由守卫） | ✅ |
+| Prompt 管理 22+ 个 REST 接口 + Swagger 文档 | ✅ |
+| 前端登录页（验证码 + token 保存 + 路由守卫） | ✅ |
 | Prompt 列表（搜索 / 分类筛选 / 分页 / 收藏 / 一键复制） | ✅ |
 | Prompt 新增 / 详情 / 编辑 / 删除（CRUD 闭环，本人或管理员可删） | ✅ |
 | 个人中心（我的信息 / 我的 Prompt / 收藏 / 使用记录） | ✅ |
 | 管理员后台（数据统计 / 用户禁用踢下线 / 内容管理） | ✅ |
+| 数据导出（管理后台把查询结果转存为 CSV/Excel 文件） | ✅ |
 
 ## 页面截图
 
@@ -87,7 +89,7 @@ ai-prompt-fullstack
 
 ### 后端（先启动）
 
-1. MySQL 执行 `backend/src/main/resources/sql/init.sql` 初始化数据库
+1. MySQL 执行 `backend/src/main/resources/sql/init.sql` 初始化数据库（6 张表 + 索引 + 种子数据 + 2 视图 + 1 触发器 + 1 存储过程，可重复执行）
 2. 修改 `backend/src/main/resources/application-dev.yml` 中的数据库密码
 3. 启动 `AiPromptApplication`，后端运行在 `http://localhost:8080/api`
 4. 接口文档：`http://localhost:8080/api/swagger-ui.html`

@@ -2,11 +2,9 @@
 // 首页 = Prompt 列表页：搜索 + 分类筛选 + 分页 + 收藏 + 复制使用
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { getPromptList } from '@/api/prompt'
 import { getCategoryList } from '@/api/category'
-import { addFavorite, cancelFavorite } from '@/api/favorite'
-import { recordHistory } from '@/api/history'
+import { usePromptActions } from '@/composables/usePromptActions'
 
 // ---------- 列表状态 ----------
 const list = ref([]) // 当前页的 Prompt 数组（PromptVO[]）
@@ -23,6 +21,7 @@ const query = ref({
 
 const categories = ref([]) // 分类下拉选项
 const router = useRouter()
+const { toggleFavorite, copyPrompt } = usePromptActions()
 
 // ---------- 数据加载 ----------
 async function loadList() {
@@ -53,34 +52,10 @@ function handleSearch() {
   loadList()
 }
 
-// onMounted：组件挂载完成后执行一次，等价于"页面打开时自动加载数据"
 onMounted(() => {
   loadList()
   loadCategories()
 })
-
-// ---------- 收藏 / 取消收藏 ----------
-async function toggleFavorite(item) {
-  if (item.favorited) {
-    await cancelFavorite(item.id)
-    item.favorited = false
-    item.favoriteCount--
-    ElMessage.success('已取消收藏')
-  } else {
-    await addFavorite(item.id)
-    item.favorited = true
-    item.favoriteCount++
-    ElMessage.success('收藏成功')
-  }
-}
-
-// ---------- 复制 Prompt（同时记录一次使用） ----------
-async function copyPrompt(item) {
-  await navigator.clipboard.writeText(item.content)
-  ElMessage.success('已复制到剪贴板')
-  // 使用记录失败不影响复制体验，静默处理
-  recordHistory(item.id).catch(() => {})
-}
 </script>
 
 <template>
@@ -251,11 +226,5 @@ async function copyPrompt(item) {
 
 .btn-icon {
   margin-right: 4px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  margin: 20px 0;
 }
 </style>
