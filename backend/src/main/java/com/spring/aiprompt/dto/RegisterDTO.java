@@ -22,7 +22,7 @@ public class RegisterDTO {
     private String password;
 
     /** 邮箱（可选） */
-    @Email(message = "邮箱格式不正确")
     @Size(max = 100, message = "邮箱长度不能超过100")
+    @Email(message = "邮箱格式不正确")
     private String email;
 }

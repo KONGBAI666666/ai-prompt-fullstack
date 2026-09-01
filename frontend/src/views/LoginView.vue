@@ -2,16 +2,20 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { login, getCaptcha } from '@/api/user'
+import { login, register, getCaptcha } from '@/api/user'
 import { setToken, setUser } from '@/utils/auth'
 import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 
+// 当前展示的表单模式：login=登录，register=注册
+const mode = ref('login')
+
 const form = ref({
   username: '',
   password: '',
+  email: '',
   captchaId: '',
   captchaCode: '',
 })
@@ -27,6 +31,15 @@ async function refreshCaptcha() {
 }
 
 onMounted(refreshCaptcha)
+
+// 切换登录/注册表单，清空表单并刷新验证码
+function switchMode(target) {
+  mode.value = target
+  form.value.username = ''
+  form.value.password = ''
+  form.value.email = ''
+  refreshCaptcha()
+}
 
 async function handleLogin() {
   if (!form.value.username || !form.value.password) {
@@ -53,6 +66,38 @@ async function handleLogin() {
     loading.value = false
   }
 }
+
+async function handleRegister() {
+  if (!form.value.username || !form.value.password) {
+    ElMessage.warning('请输入用户名和密码')
+    return
+  }
+  if (form.value.password.length < 6 || form.value.password.length > 20) {
+    ElMessage.warning('密码长度需在 6~20 位之间')
+    return
+  }
+  if (form.value.email && !/^[\w.+-]+@[\w-]+\.[\w.]+$/.test(form.value.email)) {
+    ElMessage.warning('邮箱格式不正确')
+    return
+  }
+  loading.value = true
+  try {
+    await register({ username: form.value.username, password: form.value.password, email: form.value.email || null })
+    ElMessage.success('注册成功，请登录')
+    // 注册成功切回登录表单，保留用户名方便直接登录
+    const keepUsername = form.value.username
+    mode.value = 'login'
+    form.value.password = ''
+    form.value.email = ''
+    form.value.username = keepUsername
+    refreshCaptcha()
+  } catch {
+    // 注册失败（如用户名已存在），刷新验证码让用户重试
+    refreshCaptcha()
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -76,10 +121,10 @@ async function handleLogin() {
 
       <!-- 右侧表单区 -->
       <div class="form-side">
-        <h2 class="title">欢迎回来</h2>
-        <p class="subtitle">登录你的账号</p>
+        <h2 class="title">{{ mode === 'login' ? '欢迎回来' : '创建账号' }}</h2>
+        <p class="subtitle">{{ mode === 'login' ? '登录你的账号' : '注册一个新账号' }}</p>
 
-        <el-form :model="form" @keyup.enter="handleLogin">
+        <el-form :model="form" @keyup.enter="mode === 'login' ? handleLogin() : handleRegister()">
           <el-form-item>
             <el-input v-model="form.username" placeholder="用户名" size="large" clearable>
               <template #prefix><el-icon><User /></el-icon></template>
@@ -89,11 +134,17 @@ async function handleLogin() {
             <el-input
               v-model="form.password"
               type="password"
-              placeholder="密码"
+              placeholder="密码（6~20位）"
               size="large"
               show-password
             >
               <template #prefix><el-icon><Lock /></el-icon></template>
+            </el-input>
+          </el-form-item>
+          <!-- 注册模式才显示邮箱输入框（可选字段） -->
+          <el-form-item v-if="mode === 'register'">
+            <el-input v-model="form.email" placeholder="邮箱（可选）" size="large" clearable>
+              <template #prefix><el-icon><Message /></el-icon></template>
             </el-input>
           </el-form-item>
           <el-form-item>
@@ -123,11 +174,22 @@ async function handleLogin() {
               size="large"
               class="login-btn"
               :loading="loading"
-              @click="handleLogin"
+              @click="mode === 'login' ? handleLogin() : handleRegister()"
             >
-              登 录
+              {{ mode === 'login' ? '登 录' : '注 册' }}
             </el-button>
           </el-form-item>
+          <!-- 登录/注册切换 -->
+          <div class="switch-mode">
+            <span v-if="mode === 'login'">
+              还没有账号？
+              <el-link type="primary" :underline="false" @click="switchMode('register')">注册账号</el-link>
+            </span>
+            <span v-else>
+              已有账号？
+              <el-link type="primary" :underline="false" @click="switchMode('login')">返回登录</el-link>
+            </span>
+          </div>
         </el-form>
       </div>
     </div>
@@ -238,6 +300,13 @@ async function handleLogin() {
 
 .login-btn {
   width: 100%;
+}
+
+/* 登录/注册切换链接 */
+.switch-mode {
+  text-align: center;
+  font-size: 13px;
+  color: var(--app-text-secondary);
 }
 
 .captcha-row {

@@ -11,6 +11,11 @@ export function login(data) {
   return request.post('/user/login', data)
 }
 
+// 注册：{username, password, email?}，成功后需自行登录
+export function register(data) {
+  return request.post('/user/register', data)
+}
+
 // 当前登录用户信息，返回 UserVO
 export function getUserInfo() {
   return request.get('/user/info')
