@@ -130,7 +130,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 2. 生成一个 token（默认 UUID 格式）
         // 3. 建立 token → userId 的映射关系
         // 之后请求只要带上这个 token，Sa-Token 就能识别出"你是谁"
-        StpUtil.getLoginIdAsLong();
         StpUtil.login(user.getId());
 
         // 组装返回数据
