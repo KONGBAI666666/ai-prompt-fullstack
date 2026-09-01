@@ -1,6 +1,6 @@
 # AI 提示词管理平台（全栈版）
 
-前后端分离的 AI 提示词管理平台。后端提供 22 个 RESTful 接口，前端使用 Vue 3 单页应用调用。
+前后端分离的 AI 提示词管理平台。后端提供 28 个 RESTful 接口，前端使用 Vue 3 单页应用调用。
 
 ## 项目架构
 
@@ -21,7 +21,7 @@
 │                        │                             │
 │      Sa-Token 拦截器（校验 token / 权限 RBAC）          │
 │                        │                             │
-│      Controller（22 个 REST 接口，统一返回 Result）      │
+│      Controller（28 个 REST 接口，统一返回 Result）      │
 │                        │                             │
 │            Service（业务逻辑 / 事务）                   │
 │                        │                             │
@@ -29,7 +29,8 @@
 └────────────────────────┼─────────────────────────────┘
                          │
                     MySQL 8.0
-        （user / prompt / category / favorite / history）
+   （sys_user / prompt / category / favorite / history
+      / role / permission / role_permission 等 9 张表）
 ```
 
 一次典型请求（以登录为例）：
@@ -46,14 +47,16 @@
 | --- | --- |
 | 用户注册 / 登录 / 登出（Sa-Token 认证） | ✅ |
 | 图形验证码（服务端生成、一次性校验） | ✅ |
-| RBAC 权限控制（USER / ADMIN） | ✅ |
-| Prompt 管理 22+ 个 REST 接口 + Swagger 文档 | ✅ |
+| RBAC 权限控制（USER / ADMIN / SUPER_ADMIN 三角色，16 个权限点） | ✅ |
+| Prompt 管理 28 个 REST 接口 + Swagger 文档 | ✅ |
 | 前端登录页（验证码 + token 保存 + 路由守卫） | ✅ |
 | Prompt 列表（搜索 / 分类筛选 / 分页 / 收藏 / 一键复制） | ✅ |
 | Prompt 新增 / 详情 / 编辑 / 删除（CRUD 闭环，本人或管理员可删） | ✅ |
 | 个人中心（我的信息 / 我的 Prompt / 收藏 / 使用记录） | ✅ |
 | 管理员后台（数据统计 / 用户禁用踢下线 / 内容管理） | ✅ |
+| 权限管理（角色-权限绑定、事务式整体替换、内置角色保护） | ✅ |
 | 数据导出（管理后台把查询结果转存为 CSV/Excel 文件） | ✅ |
+| 明暗双主题 UI（CSS 变量切换，全站图标化） | ✅ |
 
 ## 页面截图
 
@@ -77,6 +80,10 @@
 
 ![管理后台](docs/screenshots/管理后台.png)
 
+### 管理员后台——权限管理（角色与权限点绑定）
+
+![管理后台权限管理](docs/screenshots/管理后台权限管理.png)
+
 ## 项目结构
 
 ```
@@ -89,7 +96,7 @@ ai-prompt-fullstack
 
 ### 后端（先启动）
 
-1. MySQL 执行 `backend/src/main/resources/sql/init.sql` 初始化数据库（6 张表 + 索引 + 种子数据 + 2 视图 + 1 触发器 + 1 存储过程，可重复执行）
+1. MySQL 执行 `backend/src/main/resources/sql/init.sql` 初始化数据库（9 张表 + 17 个索引 + 种子数据 + 2 视图 + 1 触发器 + 1 存储过程，可重复执行）
 2. 修改 `backend/src/main/resources/application-dev.yml` 中的数据库密码
 3. 启动 `AiPromptApplication`，后端运行在 `http://localhost:8080/api`
 4. 接口文档：`http://localhost:8080/api/swagger-ui.html`
