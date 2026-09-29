@@ -190,7 +190,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 管理员：启用/禁用用户
      * <p>
      * status 1=正常，0=禁用。
-     * 业务规则：不能禁用管理员账号（防止管理员互相禁用导致系统无管理员可用）。
+     * 业务规则：不能禁用 ADMIN 与 SUPER_ADMIN 账号。
+     * - ADMIN：防止管理员互相禁用导致系统无管理员可用。
+     * - SUPER_ADMIN：它是角色体系的"最终治理者"，ADMIN 角色的权限万一被清空
+     *   （RBAC 界面上把 role:assign / role:list 取消勾选），就只能靠它登录恢复，
+     *   因此它必须比 ADMIN 更不可触碰 —— 否则会失去唯一的兜底入口。
      * 禁用后立即调用 StpUtil.kickout(id) 踢下线 —— 否则被禁用用户已持有的 token
      * 在过期前仍可正常访问（Sa-Token 的 token 有 30 天有效期）。
      * <p>
@@ -209,6 +213,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User user = getById(id);
         if (user == null) {
             throw new BusinessException("用户不存在");
+        }
+
+        // 安全规则：SUPER_ADMIN 是最终治理者，任何情况都不允许禁用（含启用操作也不必要，但禁用是硬红线）
+        if ("SUPER_ADMIN".equals(user.getRole())) {
+            throw new BusinessException("超级管理员账号不可禁用");
         }
 
         // 安全规则：不能禁用管理员（避免管理员互相禁用导致锁死）

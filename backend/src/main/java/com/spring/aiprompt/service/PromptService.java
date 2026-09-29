@@ -18,7 +18,7 @@ public interface PromptService extends IService<Prompt> {
 
     /**
      * 分页查询（统一入口）：
-     * keyword 模糊匹配 title 或 description；categoryId 可选过滤；
+     * keyword 模糊匹配 title、description 或所属分类名；categoryId 可选过滤；
      * onlyUserId 非空时只查该用户的 Prompt（/prompt/my 与 /admin/prompt/list 复用）
      */
     Page<PromptVO> pageList(long pageNum, long pageSize, String keyword, Long categoryId, Long onlyUserId);

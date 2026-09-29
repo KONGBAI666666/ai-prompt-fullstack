@@ -65,7 +65,7 @@ onMounted(() => {
       <div class="search-row">
         <el-input
           v-model="query.keyword"
-          placeholder="搜索标题或描述关键词"
+          placeholder="搜索标题 / 描述 / 分类关键词"
           clearable
           class="search-input"
           @keyup.enter="handleSearch"

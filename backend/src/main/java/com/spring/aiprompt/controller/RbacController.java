@@ -1,5 +1,6 @@
 package com.spring.aiprompt.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.spring.aiprompt.common.Result;
 import com.spring.aiprompt.entity.Permission;
@@ -45,6 +46,7 @@ public class RbacController {
      * 返回的每个 Role 对象的 permissionCodes 字段已填充该角色的权限编码列表。
      */
     @Operation(summary = "角色列表（含每个角色已绑定的权限）")
+    @SaCheckPermission("role:list")
     @GetMapping("/role/list")
     public Result<List<Role>> roleList() {
         return Result.success(roleService.listAll());
@@ -57,6 +59,7 @@ public class RbacController {
      * 返回系统定义的全部权限点，按模块分组展示。
      */
     @Operation(summary = "权限点字典列表")
+    @SaCheckPermission("role:list")
     @GetMapping("/permission/list")
     public Result<List<Permission>> permissionList() {
         return Result.success(permissionService.listAll());
@@ -77,6 +80,7 @@ public class RbacController {
      * @param body 请求体 {roleCode, permissionCodes}
      */
     @Operation(summary = "为指定角色分配权限（全量替换）")
+    @SaCheckPermission("role:assign")
     @PostMapping("/role/assign")
     public Result<Void> assignRole(@RequestBody Map<String, Object> body) {
         String roleCode = (String) body.get("roleCode");

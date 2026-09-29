@@ -1,5 +1,6 @@
 package com.spring.aiprompt.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.spring.aiprompt.common.Result;
 import com.spring.aiprompt.dto.CategoryDTO;
@@ -24,13 +25,17 @@ import java.util.List;
  * <p>
  * 路径前缀：/category
  * <p>
- * 权限设计：
- * - GET /category/list：所有登录用户都能查（首页筛选、发布页选择分类都要用）
- * - POST /category：只有管理员能新增（@SaCheckRole("ADMIN")）
- * - DELETE /category/{id}：只有管理员能删除（@SaCheckRole("ADMIN")）
+ * 权限设计（角色 + 权限点双层校验）：
+ * - GET /category/list：所有登录用户都能查（首页筛选、发布页选择分类都要用）→ category:list
+ * - POST /category：只有管理员能新增 → @SaCheckRole("ADMIN") + category:create
+ * - DELETE /category/{id}：只有管理员能删除 → @SaCheckRole("ADMIN") + category:delete
+ * <p>
+ * 两个注解是"与"关系：既要角色是 ADMIN，又要该角色的权限列表里含对应权限编码。
+ * 权限编码由 StpInterfaceImpl 每次鉴权实时查库得到，所以管理员在后台调整权限勾选后立即生效。
  * <p>
  * @SaCheckRole("ADMIN")：Sa-Token 注解，表示当前登录用户的角色列表中必须包含 "ADMIN" 才能访问，
  * 否则抛 NotRoleException，被 GlobalExceptionHandler 转为 403。
+ * @SaCheckPermission(...)：校验权限点（如 category:create），不满足抛 NotPermissionException，同样转 403。
  */
 @Tag(name = "分类管理")
 @RestController
@@ -45,6 +50,7 @@ public class CategoryController {
      * 前端首页分类筛选下拉框、发布页分类选择器都调这个接口
      */
     @Operation(summary = "分类列表")
+    @SaCheckPermission("category:list")
     @GetMapping("/list")
     public Result<List<Category>> list() {
         return Result.success(categoryService.listAll());
@@ -53,9 +59,11 @@ public class CategoryController {
     /**
      * 新增分类（管理员专属）
      * @SaCheckRole("ADMIN")：非管理员访问会返回 403
+     * @SaCheckPermission("category:create")：ADMIN 角色的权限勾选里必须有这一项
      */
     @Operation(summary = "新增分类（管理员）")
     @SaCheckRole("ADMIN")
+    @SaCheckPermission("category:create")
     @PostMapping
     public Result<Void> add(@Validated @RequestBody CategoryDTO dto) {
         categoryService.add(dto);
@@ -68,6 +76,7 @@ public class CategoryController {
      */
     @Operation(summary = "删除分类（管理员）")
     @SaCheckRole("ADMIN")
+    @SaCheckPermission("category:delete")
     @DeleteMapping("/{id}")
     public Result<Void> remove(@PathVariable Long id) {
         categoryService.removeCategory(id);

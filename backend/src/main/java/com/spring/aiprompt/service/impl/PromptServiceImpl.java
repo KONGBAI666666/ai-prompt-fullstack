@@ -85,9 +85,14 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
      * 分页查询 Prompt 列表（统一入口，多个 Controller 复用）
      * <p>
      * 查询条件（全部可选）：
-     * - keyword：模糊匹配 title 或 description（LIKE '%keyword%'）
+     * - keyword：模糊匹配 title、description 或所属分类名（LIKE '%keyword%'）
      * - categoryId：精确筛选分类（= categoryId）
      * - onlyUserId：只查某个用户的（/prompt/my 和 /admin/prompt/list 复用此参数）
+     * <p>
+     * 为什么关键词要匹配分类名：管理后台和导出的表格里都展示"分类"列，
+     * 用户输入"编程"这类分类词是自然预期；分类名存在 category 表里，
+     * 所以先查出名字命中的分类 id 集合，再作为 OR 条件拼进查询
+     * （集合为空时跳过，避免拼出 IN () 的非法 SQL）。
      * <p>
      * 排序：按创建时间倒序（最新排前面）
      * <p>
@@ -102,19 +107,35 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
      */
     @Override
     public Page<PromptVO> pageList(long pageNum, long pageSize, String keyword, Long categoryId, Long onlyUserId) {
+        // 第一步：关键词命中了哪些分类？
+        // SELECT id FROM category WHERE name LIKE '%keyword%'
+        // 结果用于下面拼 OR category_id IN (...) 条件
+        List<Long> keywordCategoryIds = List.of();
+        if (keyword != null && !keyword.isBlank()) {
+            keywordCategoryIds = categoryMapper.selectList(
+                            Wrappers.<Category>lambdaQuery().like(Category::getName, keyword))
+                    .stream().map(Category::getId).toList();
+        }
+
         // 链式条件查询：
         // .and(condition, lambda)：condition 为 true 时才拼接条件
         // .like(Prompt::getTitle, keyword) → title LIKE '%keyword%'
         // .or() → OR
         // .like(Prompt::getDescription, keyword) → description LIKE '%keyword%'
-        // 组合效果：WHERE (title LIKE '%kw%' OR description LIKE '%kw%')
+        // 组合效果：WHERE (title LIKE '%kw%' OR description LIKE '%kw%' [OR category_id IN (...)])
         // .eq(categoryId != null, Prompt::getCategoryId, categoryId) → category_id = ?（仅当 categoryId 非空时拼接）
         // .eq(onlyUserId != null, Prompt::getUserId, onlyUserId) → user_id = ?（仅当 onlyUserId 非空时拼接）
+        List<Long> matchedCategoryIds = keywordCategoryIds;
         Page<Prompt> page = lambdaQuery()
-                .and(keyword != null && !keyword.isBlank(), w -> w
-                        .like(Prompt::getTitle, keyword)
-                        .or()
-                        .like(Prompt::getDescription, keyword))
+                .and(keyword != null && !keyword.isBlank(), w -> {
+                    w.like(Prompt::getTitle, keyword)
+                            .or()
+                            .like(Prompt::getDescription, keyword);
+                    // 分类名命中时追加 OR category_id IN (...)（lambda 里只能引用事实上的 final 变量）
+                    if (!matchedCategoryIds.isEmpty()) {
+                        w.or().in(Prompt::getCategoryId, matchedCategoryIds);
+                    }
+                })
                 .eq(categoryId != null, Prompt::getCategoryId, categoryId)
                 .eq(onlyUserId != null, Prompt::getUserId, onlyUserId)
                 .orderByDesc(Prompt::getCreateTime)

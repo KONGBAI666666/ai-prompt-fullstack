@@ -1,5 +1,6 @@
 package com.spring.aiprompt.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spring.aiprompt.common.Result;
@@ -62,6 +63,7 @@ public class AdminController {
      * 排序：按注册时间倒序（最新用户排前面）。
      */
     @Operation(summary = "用户分页列表（管理员）")
+    @SaCheckPermission("user:list")
     @GetMapping("/user/list")
     public Result<Page<UserVO>> userList(@RequestParam(defaultValue = "1") long pageNum,
                                          @RequestParam(defaultValue = "10") long pageSize) {
@@ -75,6 +77,7 @@ public class AdminController {
      * 禁用后立即踢下线（StpUtil.kickout），触发器自动写审计日志。
      */
     @Operation(summary = "启用/禁用用户（管理员）")
+    @SaCheckPermission("user:manage")
     @PutMapping("/user/{id}/status")
     public Result<Void> updateUserStatus(@PathVariable Long id, @RequestParam Integer status) {
         userService.updateUserStatus(id, status);
@@ -88,6 +91,7 @@ public class AdminController {
      * 复用 promptService.pageList，onlyUserId 传 null 表示不限用户。
      */
     @Operation(summary = "所有Prompt分页列表（管理员）")
+    @SaCheckPermission("prompt:view")
     @GetMapping("/prompt/list")
     public Result<Page<PromptVO>> promptList(@RequestParam(defaultValue = "1") long pageNum,
                                              @RequestParam(defaultValue = "10") long pageSize,
@@ -110,6 +114,7 @@ public class AdminController {
      * @param response  Servlet 响应对象，直接往里写 CSV 内容
      */
     @Operation(summary = "导出Prompt查询结果为CSV（管理员）")
+    @SaCheckPermission("data:export")
     @GetMapping("/prompt/export")
     public void exportPrompts(@RequestParam(required = false) String keyword,
                               HttpServletResponse response) throws IOException {
@@ -192,6 +197,7 @@ public class AdminController {
      * @return Map<统计项名, 数值>
      */
     @Operation(summary = "系统统计（管理员）")
+    @SaCheckPermission("data:view-stat")
     @GetMapping("/stats")
     public Result<Map<String, Long>> stats() {
         // LinkedHashMap 保持插入顺序（JSON 输出顺序固定）

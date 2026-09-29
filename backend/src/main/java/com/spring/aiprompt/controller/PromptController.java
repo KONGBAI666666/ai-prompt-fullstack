@@ -1,5 +1,7 @@
 package com.spring.aiprompt.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaMode;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spring.aiprompt.common.Result;
@@ -34,6 +36,20 @@ import org.springframework.web.bind.annotation.RestController;
  * - GET    /prompt/{id}/edit → 编辑回填（浏览数不变）
  * - PUT    /prompt/{id}   → 修改
  * - DELETE /prompt/{id}   → 删除
+ * <p>
+ * 权限点映射（与 permission 表里的 16 个权限点一一对应）：
+ * - prompt:view        → list / my / detail
+ * - prompt:create      → create
+ * - prompt:edit:own    → detailForEdit / update（与 prompt:edit:any 为"或"关系）
+ * - prompt:edit:any    → detailForEdit / update（管理员编辑任意人的 Prompt）
+ * - prompt:delete:own  → delete（与 prompt:delete:any 为"或"关系）
+ * - prompt:delete:any  → delete（管理员删除任意人的 Prompt）
+ * <p>
+ * 关于 SaMode.OR：普通用户只有 own 权限、管理员只有 any 权限，
+ * 用 OR 模式表示"两者满足其一即可"，避免给每个方法按角色写两套逻辑。
+ * 权限列表由 StpInterfaceImpl 每次鉴权实时查库，管理员改完勾选即时生效。
+ * 注意：注解只做"能不能调这个接口"的粗粒度拦截，
+ * "能不能改/删这一条"（作者本人校验）仍在 Service 层，两者是互补关系。
  */
 @Tag(name = "Prompt管理")
 @RestController
@@ -48,8 +64,10 @@ public class PromptController {
      * <p>
      * @Validated 校验 PromptDTO（标题非空、内容非空、分类非空）。
      * 作者 id 在 Service 层从 token 取，不信任前端传入。
+     * 权限：prompt:create（普通用户与管理员默认都拥有）
      */
     @Operation(summary = "创建Prompt")
+    @SaCheckPermission("prompt:create")
     @PostMapping
     public Result<Void> create(@Validated @RequestBody PromptDTO dto) {
         promptService.create(dto);
@@ -72,6 +90,7 @@ public class PromptController {
      * @param categoryId  分类 id（可选）
      */
     @Operation(summary = "Prompt分页搜索列表")
+    @SaCheckPermission("prompt:view")
     @GetMapping("/list")
     public Result<Page<PromptVO>> list(@RequestParam(defaultValue = "1") long pageNum,
                                        @RequestParam(defaultValue = "10") long pageSize,
@@ -88,6 +107,7 @@ public class PromptController {
      * 复用 pageList 方法，把 onlyUserId 设为当前登录人 id。
      */
     @Operation(summary = "我的Prompt分页列表")
+    @SaCheckPermission("prompt:view")
     @GetMapping("/my")
     public Result<Page<PromptVO>> my(@RequestParam(defaultValue = "1") long pageNum,
                                      @RequestParam(defaultValue = "10") long pageSize) {
@@ -103,6 +123,7 @@ public class PromptController {
      * @param id Prompt id（路径参数）
      */
     @Operation(summary = "Prompt详情（浏览次数+1）")
+    @SaCheckPermission("prompt:view")
     @GetMapping("/{id}")
     public Result<PromptVO> detail(@PathVariable Long id) {
         return Result.success(promptService.detail(id));
@@ -117,6 +138,7 @@ public class PromptController {
      * @param id Prompt id
      */
     @Operation(summary = "编辑回填详情（不增加浏览次数）")
+    @SaCheckPermission(value = {"prompt:edit:own", "prompt:edit:any"}, mode = SaMode.OR)
     @GetMapping("/{id}/edit")
     public Result<PromptVO> detailForEdit(@PathVariable Long id) {
         return Result.success(promptService.getForEdit(id));
@@ -129,6 +151,7 @@ public class PromptController {
      * Service 层会校验 prompt.userId 是否等于当前登录人 id。
      */
     @Operation(summary = "修改自己的Prompt")
+    @SaCheckPermission(value = {"prompt:edit:own", "prompt:edit:any"}, mode = SaMode.OR)
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Validated @RequestBody PromptDTO dto) {
         promptService.updatePrompt(id, dto);
@@ -142,6 +165,7 @@ public class PromptController {
      * 删除时级联清理收藏和使用记录（事务保证一致性）。
      */
     @Operation(summary = "删除Prompt（本人或管理员）")
+    @SaCheckPermission(value = {"prompt:delete:own", "prompt:delete:any"}, mode = SaMode.OR)
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         promptService.deletePrompt(id);

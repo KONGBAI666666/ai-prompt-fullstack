@@ -1,5 +1,6 @@
 package com.spring.aiprompt.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spring.aiprompt.common.Result;
 import com.spring.aiprompt.service.FavoriteService;
@@ -43,6 +44,7 @@ public class FavoriteController {
      * @param promptId 被收藏的 Prompt id
      */
     @Operation(summary = "收藏Prompt")
+    @SaCheckPermission("favorite:toggle")
     @PostMapping("/{promptId}")
     public Result<Void> add(@PathVariable Long promptId) {
         favoriteService.add(promptId);
@@ -58,6 +60,7 @@ public class FavoriteController {
      * @param promptId 被取消收藏的 Prompt id
      */
     @Operation(summary = "取消收藏")
+    @SaCheckPermission("favorite:toggle")
     @DeleteMapping("/{promptId}")
     public Result<Void> cancel(@PathVariable Long promptId) {
         favoriteService.cancel(promptId);
@@ -74,6 +77,7 @@ public class FavoriteController {
      * @param pageSize 每页条数，默认 10
      */
     @Operation(summary = "我的收藏分页列表")
+    @SaCheckPermission("prompt:view")
     @GetMapping("/list")
     public Result<Page<PromptVO>> list(@RequestParam(defaultValue = "1") long pageNum,
                                        @RequestParam(defaultValue = "10") long pageSize) {
