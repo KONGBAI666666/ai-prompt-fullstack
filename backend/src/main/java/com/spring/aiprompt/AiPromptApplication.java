@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * AI Prompt 管理系统 —— Spring Boot 启动类
@@ -18,11 +19,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @MapperScan("com.spring.aiprompt.mapper")：告诉 MyBatis-Plus 去这个包下扫描 Mapper 接口，
  * 自动为每个 Mapper 生成代理实现类（所以 Mapper 接口不需要写 @Mapper 注解）。
  * <p>
+ * @EnableScheduling：开启定时任务调度。CountService 里的 @Scheduled(30s)
+ * 浏览数落库任务依赖这个开关，没有它 @Scheduled 注解不生效。
+ * <p>
  * @Slf4j：Lombok 注解，自动注入 log 对象，用于日志输出。
  */
 @Slf4j
 @SpringBootApplication
 @MapperScan("com.spring.aiprompt.mapper")
+@EnableScheduling
 public class AiPromptApplication {
 
     /**

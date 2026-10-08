@@ -52,6 +52,11 @@
             <artifactId>sa-token-spring-boot3-starter</artifactId>
             <version>1.45.0</version>
         </dependency>
+        <!-- Redis：浏览数计数、验证码共享存储、AI 试运行限流、分类缓存 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
         <!-- BCrypt 密码加密（仅加密模块，不引入完整 Spring Security） -->
         <dependency>
             <groupId>org.springframework.security</groupId>

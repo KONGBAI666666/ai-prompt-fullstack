@@ -23,6 +23,14 @@ public interface PromptService extends IService<Prompt> {
      */
     Page<PromptVO> pageList(long pageNum, long pageSize, String keyword, Long categoryId, Long onlyUserId);
 
+    /**
+     * 分页查询（基于视图 v_prompt_full，管理后台专用）：
+     * 视图已关联好分类名与作者名，一条 SQL 完成查询，
+     * 供管理后台内容列表（/admin/prompt/list）与数据导出（/admin/prompt/export）使用。
+     * 参数含义与 pageList 一致。
+     */
+    Page<PromptVO> pageListFromView(long pageNum, long pageSize, String keyword, Long categoryId, Long onlyUserId);
+
     /** 详情：浏览次数原子 +1 */
     PromptVO detail(Long id);
 

@@ -87,8 +87,9 @@ public class AdminController {
     /**
      * 所有 Prompt 分页（管理员视角，支持关键词搜索）
      * <p>
+     * 基于数据库视图 v_prompt_full 查询（prompt+category+sys_user 的关联封装），
+     * 分类名与作者名由视图直接提供，一条 SQL 完成查询。
      * 和首页列表的区别：管理员能看到所有人的 Prompt（首页也能看到，但管理员还要能管理/删除）。
-     * 复用 promptService.pageList，onlyUserId 传 null 表示不限用户。
      */
     @Operation(summary = "所有Prompt分页列表（管理员）")
     @SaCheckPermission("prompt:view")
@@ -96,13 +97,14 @@ public class AdminController {
     public Result<Page<PromptVO>> promptList(@RequestParam(defaultValue = "1") long pageNum,
                                              @RequestParam(defaultValue = "10") long pageSize,
                                              @RequestParam(required = false) String keyword) {
-        return Result.success(promptService.pageList(pageNum, pageSize, keyword, null, null));
+        return Result.success(promptService.pageListFromView(pageNum, pageSize, keyword, null, null));
     }
 
     /**
      * 数据导出：把当前查询结果（可按关键词过滤）导出为 CSV 文件
      * <p>
      * 属于评分表里的"数据转储"加分项。
+     * 查询基于数据库视图 v_prompt_full（与后台内容列表同源）。
      * <p>
      * 技术细节：
      * 1. 带 UTF-8 BOM（\uFEFF）：让 Excel 正确识别 UTF-8 编码，中文不乱码
@@ -120,7 +122,7 @@ public class AdminController {
                               HttpServletResponse response) throws IOException {
         // 查出所有符合条件的记录（pageSize 设大值一次取完）
         List<PromptVO> records = promptService
-                .pageList(1, 10000, keyword, null, null)
+                .pageListFromView(1, 10000, keyword, null, null)
                 .getRecords();
 
         // 生成文件名：Prompt数据_20260901161500.csv

@@ -1,6 +1,9 @@
 package com.spring.aiprompt.service;
 
 import com.spring.aiprompt.vo.CaptchaVO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -12,10 +15,10 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Base64;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 图形验证码服务 —— 防止机器人暴力撞库登录的安全组件
@@ -24,49 +27,56 @@ import java.util.concurrent.ConcurrentHashMap;
  * 1. 前端打开登录页 → 调 GET /user/captcha → 后端 generate() 生成验证码图 → 返回 {id, base64图片}
  * 2. 前端把图片显示在 img 标签里，用户人眼识别验证码
  * 3. 用户提交登录 → 带上 captchaId + captchaCode → 后端 verifyAndConsume() 校验
- * 4. 校验通过 → 验证码从内存中删除（一次性）→ 继续走登录流程
+ * 4. 校验通过 → 验证码从 Redis 中删除（一次性）→ 继续走登录流程
  * 5. 校验失败 → 返回"验证码错误"→ 前端自动刷新一张新图
  * <p>
  * 技术选型：
  * - 生成：用 Java AWT（Graphics2D）手绘图片，不依赖任何第三方图形库
- * - 存储：ConcurrentHashMap（内存），不用数据库——验证码是短生命周期数据，存数据库白白增加 IO
- * - 过期：TTL 5 分钟，每次 generate 时顺便清理过期条目（惰性清理，不需要定时器线程）
+ * - 存储：Redis（SET key code EX 300）—— 验证码是典型的"短生命周期 + 需要跨实例共享"数据，
+ *   存数据库太重，存 JVM 内存（ConcurrentHashMap）在多实例部署时各节点验证码互不可见、
+ *   且重启即全部失效。Redis 的 EX 过期天然替代了手写的惰性清理逻辑。
+ * - 过期：TTL 5 分钟，由 Redis 自动删除，不再需要 evictExpired() 清理线程/清理遍历
  * - 安全：SecureRandom（密码学安全随机数生成器），比普通 Random 更难预测
- * - 一次性：verifyAndConsume 用 store.remove(id)，校验和销毁是同一次原子操作
- * <p>
- * 如果要分布式部署（多台服务器），把 ConcurrentHashMap 换成 Redis 即可：
- *   Redis SET key value EX 300 → 存验证码，5分钟自动过期
- *   Redis GETDEL key → 取出并删除（等价于 remove）
- *   接口签名完全不用变
+ * - 一次性：verifyAndConsume 用 Lua 脚本原子地"取出并删除"（GET+DEL），
+ *   同一个 captchaId 只能被校验一次，截获也无法重放。
+ *   （不用 Redis 6.2+ 的 GETDEL 命令是因为本机 Redis 是 3.2，Lua 脚本任何版本都支持且语义相同）
  */
 @Service
+@RequiredArgsConstructor
 public class CaptchaService {
 
     /** 验证码字符表：去掉了 I/L/O/0/1 等容易混淆的字符，减少"用户看不清输错"的体验问题 */
     private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     /** 验证码长度：4 位（平衡可读性和安全性） */
     private static final int CODE_LENGTH = 4;
-    /** 过期时间：5 分钟（毫秒），足够用户慢慢输入，又不至于给攻击者太长的窗口 */
-    private static final long TTL_MILLIS = 5 * 60 * 1000L;
+    /** 过期时间：5 分钟，足够用户慢慢输入，又不至于给攻击者太长的窗口 */
+    private static final Duration TTL = Duration.ofMinutes(5);
+    /** key 前缀：captcha:{id}，加业务前缀便于区分和运维排查 */
+    private static final String KEY_PREFIX = "captcha:";
+
+    /**
+     * 原子"取出并删除"Lua 脚本（等价于 Redis 6.2 的 GETDEL，兼容 3.2）
+     * Redis 执行 Lua 脚本期间不会插入其他命令，所以 GET 和 DEL 之间
+     * 不可能被并发请求插队，一次性语义有绝对保证。
+     */
+    private static final DefaultRedisScript<String> GET_DEL_SCRIPT = new DefaultRedisScript<>(
+            "local v = redis.call('GET', KEYS[1]) " +
+            "if v then redis.call('DEL', KEYS[1]) end " +
+            "return v", String.class);
 
     /** 密码学安全的随机数生成器，比 java.util.Random 更难被预测 */
     private final SecureRandom random = new SecureRandom();
-    /** 验证码存储：Map<验证码id, Entry(code, expireAt)>，ConcurrentHashMap 保证多线程并发安全 */
-    private final Map<String, Entry> store = new ConcurrentHashMap<>();
+    private final StringRedisTemplate redis;
 
     /**
      * 生成一张验证码
      * <p>
-     * 流程：清理过期验证码 → 随机取 4 位验证码 → 生成 UUID 作为 id → 存入 Map → 画图 → 返回
+     * 流程：随机取 4 位验证码 → 生成 UUID 作为 id → 存入 Redis（带 5 分钟 TTL）→ 画图 → 返回
      *
      * @return CaptchaVO {id: UUID, image: "data:image/png;base64,...."}
      *         image 带了 data:image/png;base64, 前缀，前端可以直接绑定到 img 的 src 属性
      */
     public CaptchaVO generate() {
-        // 惰性清理：每次生成新验证码时，顺便把过期的老验证码清掉
-        // 不用单独起一个定时器线程，减少资源消耗
-        evictExpired();
-
         // 从字符表里随机取 4 个字符，拼成验证码
         StringBuilder sb = new StringBuilder(CODE_LENGTH);
         for (int i = 0; i < CODE_LENGTH; i++) {
@@ -76,8 +86,9 @@ public class CaptchaService {
         // 用 UUID 作为验证码的唯一标识，前端拿到后登录时回传这个 id
         String id = UUID.randomUUID().toString();
 
-        // 存入 Map：code = 验证码文本，expireAt = 过期时间戳
-        store.put(id, new Entry(sb.toString(), System.currentTimeMillis() + TTL_MILLIS));
+        // 存入 Redis：SET captcha:{id} code EX 300
+        // TTL 到期由 Redis 自动删除 —— 替代了旧版 ConcurrentHashMap + 手写惰性清理
+        redis.opsForValue().set(KEY_PREFIX + id, sb.toString(), TTL);
 
         // draw() 用 AWT 画验证码图片 → 返回 PNG 二进制 → Base64 编码 → 拼上 data: 前缀
         return new CaptchaVO(id, "data:image/png;base64,"
@@ -87,10 +98,10 @@ public class CaptchaService {
     /**
      * 校验并销毁验证码（一次性使用）
      * <p>
-     * 核心安全机制：store.remove(id) —— 取出的同时立即从 Map 中删除。
+     * 核心安全机制：Lua 脚本原子地"取出 + 删除"。
      * 这意味着同一个验证码 id 只能被校验一次：
-     * - 第一次校验：从 Map 取出 code → 比对 → 匹配返回 true → 验证码已从 Map 删除
-     * - 第二次用同一个 id：Map 里已经没有了 → 返回 false
+     * - 第一次校验：脚本取出 code → 比对 → 匹配返回 true → key 已被脚本删除
+     * - 第二次用同一个 id：Redis 里已经没有了 → 返回 false
      * 这样即使攻击者截获了 captchaId，也无法重放使用。
      *
      * @param id   验证码标识（generate 时返回的 UUID）
@@ -102,26 +113,14 @@ public class CaptchaService {
         if (id == null || code == null) {
             return false;
         }
-        // 关键操作：remove 同时完成"取出"和"删除"两个动作，是原子操作
-        Entry entry = store.remove(id);
-        // entry == null：验证码不存在（可能是 id 错了，或者已经被用过一次了）
-        // 时间戳检查：验证码已过期
-        if (entry == null || System.currentTimeMillis() > entry.expireAt()) {
+        // 原子取出并删除：EXISTS 的 key 返回 null（不存在 / 已过期 / 已用过一次）
+        String stored = redis.execute(GET_DEL_SCRIPT, List.of(KEY_PREFIX + id));
+        if (stored == null) {
             return false;
         }
         // equalsIgnoreCase：忽略大小写（A 和 a 都算对），提升用户体验
         // trim()：去掉首尾空格，防止用户不小心多打了空格
-        return entry.code().equalsIgnoreCase(code.trim());
-    }
-
-    /**
-     * 惰性清理：遍历 Map，删除所有已过期的验证码
-     * 在每次 generate() 时调用，不需要独立的定时器线程
-     */
-    private void evictExpired() {
-        long now = System.currentTimeMillis();
-        // removeIf：遍历 Map 的 entrySet，如果 lambda 返回 true 就删除该条目
-        store.entrySet().removeIf(e -> e.getValue().expireAt() < now);
+        return stored.equalsIgnoreCase(code.trim());
     }
 
     /**
@@ -208,14 +207,5 @@ public class CaptchaService {
     /** 随机浅色：RGB 分量都在 160~239 之间，作为干扰线和干扰点的颜色 */
     private Color randomLightColor() {
         return new Color(160 + random.nextInt(80), 160 + random.nextInt(80), 160 + random.nextInt(80));
-    }
-
-    /**
-     * 验证码存储条目（Java 16+ record）
-     * record 是不可变的数据载体，自动生成构造器、getter、equals、hashCode、toString。
-     * - code：验证码文本（如 "AB3K"）
-     * - expireAt：过期时间戳（System.currentTimeMillis() + TTL_MILLIS）
-     */
-    private record Entry(String code, long expireAt) {
     }
 }

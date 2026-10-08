@@ -10,12 +10,14 @@ import com.spring.aiprompt.entity.Favorite;
 import com.spring.aiprompt.entity.Prompt;
 import com.spring.aiprompt.entity.PromptHistory;
 import com.spring.aiprompt.entity.User;
+import com.spring.aiprompt.entity.VPromptFull;
 import com.spring.aiprompt.exception.BusinessException;
 import com.spring.aiprompt.mapper.CategoryMapper;
 import com.spring.aiprompt.mapper.FavoriteMapper;
 import com.spring.aiprompt.mapper.PromptHistoryMapper;
 import com.spring.aiprompt.mapper.PromptMapper;
 import com.spring.aiprompt.mapper.UserMapper;
+import com.spring.aiprompt.mapper.VPromptFullMapper;
 import com.spring.aiprompt.service.PromptService;
 import com.spring.aiprompt.vo.PromptVO;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +53,8 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
     private final UserMapper userMapper;
     private final FavoriteMapper favoriteMapper;
     private final PromptHistoryMapper promptHistoryMapper;
+    private final VPromptFullMapper vPromptFullMapper;
+    private final com.spring.aiprompt.service.CountService countService;
 
     /**
      * 创建 Prompt
@@ -148,6 +152,76 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
     }
 
     /**
+     * 分页查询 Prompt 列表（基于视图 v_prompt_full，管理后台专用）
+     * <p>
+     * 与 pageList 的区别：查询主体从 prompt 主表换成数据库视图 v_prompt_full
+     * （prompt LEFT JOIN category LEFT JOIN sys_user 的查询封装）。
+     * 视图里已经带好分类名（category_name）和作者名（author_name），
+     * 一条 SQL 同时完成"查主表 + 关联分类 + 关联作者"，省去 pageList 里的批量回查步骤。
+     * <p>
+     * 使用方：管理后台内容列表（/admin/prompt/list）与数据导出（/admin/prompt/export）。
+     * 前台列表（首页/我的）仍走 pageList，保持主表直查的轻量路径。
+     * <p>
+     * 关键词匹配范围与 pageList 一致：标题、描述、所属分类名。
+     * 视图里分类名是现成列，直接 LIKE category_name 即可，
+     * 无需像 pageList 那样先查 category 表拿 id 集合再 OR IN。
+     *
+     * @param pageNum     页码
+     * @param pageSize    每页条数
+     * @param keyword     关键词（可选，模糊匹配标题/描述/分类名）
+     * @param categoryId  分类 id（可选，精确筛选）
+     * @param onlyUserId  指定用户 id（可选，非空时只查该用户的 Prompt）
+     * @return 分页结果，records 里是 PromptVO（含分类名、作者名、是否已收藏）
+     */
+    @Override
+    public Page<PromptVO> pageListFromView(long pageNum, long pageSize, String keyword, Long categoryId, Long onlyUserId) {
+        // 直接查视图：WHERE (title LIKE ? OR description LIKE ? OR category_name LIKE ?) AND ...
+        Page<VPromptFull> page = vPromptFullMapper.selectPage(new Page<>(pageNum, pageSize),
+                Wrappers.<VPromptFull>lambdaQuery()
+                        .and(keyword != null && !keyword.isBlank(), w -> w
+                                .like(VPromptFull::getTitle, keyword)
+                                .or()
+                                .like(VPromptFull::getDescription, keyword)
+                                .or()
+                                .like(VPromptFull::getCategoryName, keyword))
+                        .eq(categoryId != null, VPromptFull::getCategoryId, categoryId)
+                        .eq(onlyUserId != null, VPromptFull::getUserId, onlyUserId)
+                        .orderByDesc(VPromptFull::getCreateTime));
+
+        // 视图没有"当前用户是否收藏"这一列，仍需批量查 favorite 表补齐
+        // （管理员在后台也可能收藏过内容，保持与 pageList 相同的 VO 结构，前端零改动）
+        Set<Long> favoritedIds = new HashSet<>();
+        if (!page.getRecords().isEmpty() && StpUtil.isLogin()) {
+            List<Long> ids = page.getRecords().stream().map(VPromptFull::getId).toList();
+            favoriteMapper.selectList(Wrappers.<Favorite>lambdaQuery()
+                            .eq(Favorite::getUserId, StpUtil.getLoginIdAsLong())
+                            .in(Favorite::getPromptId, ids))
+                    .forEach(f -> favoritedIds.add(f.getPromptId()));
+        }
+
+        // 视图实体 → PromptVO：字段名对应关系 authorName → username，其余同名直接赋值
+        Page<PromptVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        voPage.setRecords(page.getRecords().stream().map(v -> {
+            PromptVO vo = new PromptVO();
+            vo.setId(v.getId());
+            vo.setTitle(v.getTitle());
+            vo.setContent(v.getContent());
+            vo.setDescription(v.getDescription());
+            vo.setCategoryId(v.getCategoryId());
+            vo.setCategoryName(v.getCategoryName());
+            vo.setUserId(v.getUserId());
+            vo.setUsername(v.getAuthorName());
+            vo.setViewCount(v.getViewCount());
+            vo.setFavoriteCount(v.getFavoriteCount());
+            vo.setFavorited(favoritedIds.contains(v.getId()));
+            vo.setCreateTime(v.getCreateTime());
+            vo.setUpdateTime(v.getUpdateTime());
+            return vo;
+        }).toList());
+        return voPage;
+    }
+
+    /**
      * 获取 Prompt 详情（浏览数 +1）
      * <p>
      * 与 getForEdit 的区别：这个方法会触发浏览计数 +1，用于用户点进详情页时调用。
@@ -167,11 +241,10 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
         if (prompt == null) {
             throw new BusinessException("Prompt不存在");
         }
-        // 原子递增浏览数：UPDATE prompt SET view_count = view_count + 1 WHERE id = ?
-        // 数据库引擎保证单条 UPDATE 语句的原子性，不会丢失更新
-        lambdaUpdate().eq(Prompt::getId, id).setSql("view_count = view_count + 1").update();
-        // 内存中的 prompt 对象也同步 +1（用于返回给前端的 VO）
-        prompt.setViewCount(prompt.getViewCount() + 1);
+        // 浏览数 +1 走 Redis：INCR 纯内存原子操作，高频浏览不再打数据库
+        // （数据库的 view_count 由 CountService 的定时任务每 30 秒批量落库）
+        long realTimeView = countService.incrView(id, prompt.getViewCount());
+        prompt.setViewCount((int) realTimeView);
         return toVOList(List.of(prompt)).get(0);
     }
 
@@ -335,11 +408,20 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
                     .forEach(f -> favoritedIds.add(f.getPromptId()));
         }
 
+        // —— 批量合并 Redis 未落库浏览增量 ——
+        // 列表实体来自数据库，view_count 最多落后 30 秒（定时落库周期），
+        // 把 Redis 里的实时增量加回去，列表页与详情页的浏览数才一致
+        Map<Long, Long> viewDeltas = countService.getViewDeltas(
+                prompts.stream().map(Prompt::getId).toList());
+
         // —— 组装 VO ——
         return prompts.stream().map(p -> {
             PromptVO vo = new PromptVO();
             // BeanUtils.copyProperties：按字段名复制 Prompt 的属性到 PromptVO
             BeanUtils.copyProperties(p, vo);
+            // 浏览数 = 数据库基准 + Redis 未落库增量（实时值）
+            long delta = viewDeltas.getOrDefault(p.getId(), 0L);
+            vo.setViewCount(p.getViewCount() == null ? (int) delta : (int) (p.getViewCount() + delta));
             // 补充分类名（从 Map 取，O(1)）
             vo.setCategoryName(categoryNames.get(p.getCategoryId()));
             // 补充作者名

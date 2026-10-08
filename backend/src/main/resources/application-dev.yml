@@ -10,6 +10,28 @@ spring:
     username: root
     # 请替换为你本地 MySQL 的 root 密码（不要把真实密码提交到仓库）
     password: your_password
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # Redis 3.2 无密码，本地开发默认即可；生产环境务必设置 requirepass
+      database: 0
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+
+# AI 在线试运行（OpenAI 兼容协议，DeepSeek / 通义 / 智谱均可）
+# 申请 DeepSeek key：https://platform.deepseek.com → API Keys → 填到下方 api-key
+ai:
+  enabled: false            # 填好 api-key 后改为 true，功能即对前端开放
+  base-url: https://api.deepseek.com
+  api-key: ""               # ← 在这里填你的 key（本文件不入库，不会泄露）
+  model: deepseek-chat
+  daily-limit: 20           # 每用户每天可试运行次数（Redis 计数限流）
+  timeout-seconds: 60       # 单次生成超时
 
 mybatis-plus:
   configuration:

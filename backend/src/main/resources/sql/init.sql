@@ -231,7 +231,7 @@ INSERT INTO role (code, name, description, create_time) VALUES
 ('ADMIN',        '管理员',      '在普通用户权限之上，可管理用户、内容与分类，导出数据',              NOW()),
 ('SUPER_ADMIN',  '超级管理员',  '拥有系统全部权限，包括权限点的分配与维护（用户分组的最终治理者）',  NOW());
 
--- 16 个权限点（按模块分组）
+-- 17 个权限点（按模块分组）
 INSERT INTO permission (code, name, module, description) VALUES
 ('prompt:view',          '查看提示词',     '提示词', '浏览列表、查看详情'),
 ('prompt:create',        '发布提示词',     '提示词', '新增自己的提示词'),
@@ -240,6 +240,7 @@ INSERT INTO permission (code, name, module, description) VALUES
 ('prompt:delete:own',    '删除自己提示词', '提示词', '删除本人创建的提示词'),
 ('prompt:delete:any',    '删除任意提示词', '提示词', '管理员删除任意用户的提示词'),
 ('favorite:toggle',      '收藏/取消收藏',  '提示词', '收藏或取消收藏任意提示词'),
+('ai:run',               'AI试运行',       'AI',     '在线试运行提示词（大模型流式生成，每日限流）'),
 ('category:list',        '查看分类',       '分类',   '浏览分类列表'),
 ('category:create',      '新增分类',       '分类',   '管理员新增分类'),
 ('category:delete',      '删除分类',       '分类',   '管理员删除分类'),
@@ -251,16 +252,17 @@ INSERT INTO permission (code, name, module, description) VALUES
 ('role:assign',          '分配权限',       '权限',   '为角色绑定或解绑权限点');
 
 -- 角色-权限绑定（RBAC 核心数据）
--- USER：6 个基本权限
+-- USER：7 个基本权限
 INSERT INTO role_permission (role_code, permission_code) VALUES
 ('USER', 'prompt:view'),
 ('USER', 'prompt:create'),
 ('USER', 'prompt:edit:own'),
 ('USER', 'prompt:delete:own'),
 ('USER', 'favorite:toggle'),
+('USER', 'ai:run'),
 ('USER', 'category:list');
 
--- ADMIN：USER 全部 + 管理类 10 个权限（合计 16 个，但 user:list 已包含 USER 没有，仅做加项）
+-- ADMIN：USER 全部 + 管理类 10 个权限（合计 17 个，但 user:list 已包含 USER 没有，仅做加项）
 INSERT INTO role_permission (role_code, permission_code) VALUES
 ('ADMIN', 'prompt:view'),
 ('ADMIN', 'prompt:create'),
@@ -269,6 +271,7 @@ INSERT INTO role_permission (role_code, permission_code) VALUES
 ('ADMIN', 'prompt:delete:own'),
 ('ADMIN', 'prompt:delete:any'),
 ('ADMIN', 'favorite:toggle'),
+('ADMIN', 'ai:run'),
 ('ADMIN', 'category:list'),
 ('ADMIN', 'category:create'),
 ('ADMIN', 'category:delete'),
@@ -279,7 +282,7 @@ INSERT INTO role_permission (role_code, permission_code) VALUES
 ('ADMIN', 'role:list'),
 ('ADMIN', 'role:assign');
 
--- SUPER_ADMIN：拥有全部 16 个权限点
+-- SUPER_ADMIN：拥有全部 17 个权限点
 INSERT INTO role_permission (role_code, permission_code)
 SELECT 'SUPER_ADMIN', code FROM permission;
 
