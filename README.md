@@ -98,7 +98,7 @@ ai-prompt-fullstack
 
 ### 后端（先启动）
 
-1. MySQL 执行 `backend/src/main/resources/sql/init.sql` 初始化数据库（9 张表 + 17 个索引 + 种子数据 + 2 视图 + 1 触发器 + 1 存储过程，可重复执行）
+1. MySQL 执行 `backend/src/main/resources/sql/init.sql` 初始化数据库（9 张表 + 20 个索引（含主键与唯一约束） + 种子数据 + 2 视图 + 1 触发器 + 1 存储过程，可重复执行）
 2. 修改 `backend/src/main/resources/application-dev.yml` 中的数据库密码
 3. 启动 `AiPromptApplication`，后端运行在 `http://localhost:8080/api`
 4. 接口文档：`http://localhost:8080/api/swagger-ui.html`
