@@ -84,7 +84,7 @@ public class AiService {
                     .connectTimeout(Duration.ofSeconds(10))
                     .build();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(props.getBaseUrl() + "/v1/chat/completions"))
+                    .uri(URI.create(buildChatUrl(props.getBaseUrl())))
                     .header("Authorization", "Bearer " + props.getApiKey())
                     .header("Content-Type", "application/json")
                     .timeout(Duration.ofSeconds(props.getTimeoutSeconds()))
@@ -156,5 +156,28 @@ public class AiService {
             // 前端断开连接（用户关页面/点停止）时 send 会抛异常，打日志即可
             log.debug("SSE发送失败（客户端可能已断开）: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 拼 chat/completions 完整端点，兼容三种 base-url 填法：
+     * <ul>
+     *   <li>填到版本目录：https://api.deepseek.com/v1、https://open.bigmodel.cn/api/paas/v4（GLM）、
+     *       https://dashscope.aliyuncs.com/compatible-mode/v1（通义）→ 直接拼 /chat/completions</li>
+     *   <li>只填主机：https://api.deepseek.com → 补 /v1/chat/completions</li>
+     *   <li>填完整端点：以 /chat/completions 结尾 → 原样使用</li>
+     * </ul>
+     * 各家兼容端点的版本段不同（DeepSeek/通义是 v1，智谱 GLM 是 v4），
+     * 写死 /v1 会让 GLM 接不上，所以按尾缀智能补全。
+     */
+    private String buildChatUrl(String baseUrl) {
+        String base = baseUrl.replaceAll("/+$", ""); // 去掉末尾多余的 /
+        if (base.endsWith("/chat/completions")) {
+            return base;
+        }
+        // 尾段形如 /v1 /v4 /compatible-mode/v1 之类的"版本目录"→ 只补方法路径
+        if (base.matches(".*(/v\\d+|/compatible-mode/v\\d+)")) {
+            return base + "/chat/completions";
+        }
+        return base + "/v1/chat/completions";
     }
 }
